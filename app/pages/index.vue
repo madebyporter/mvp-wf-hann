@@ -29,11 +29,6 @@
       </aside>
 
       <section class="jobqueue h-full min-h-0 overflow-y-auto p-4 space-y-4">
-        <div class="flex items-center gap-4 text-sm border-b pb-2">
-          <button type="button" class="font-medium" :class="currentView === 'dashboard' ? 'text-slate-900' : 'text-slate-500'" @click="openView('dashboard')">Dashboard</button>
-          <button type="button" class="font-medium" :class="currentView === 'jobs' ? 'text-slate-900' : 'text-slate-500'" @click="openView('jobs')">Jobs</button>
-          <button type="button" class="font-medium" :class="currentView === 'crm' ? 'text-slate-900' : 'text-slate-500'" @click="openView('crm')">CRM</button>
-        </div>
 
         <template v-if="currentView !== 'crm' && selectedJob">
           <button type="button" class="text-sm text-blue-700 hover:underline" @click="selectedJob = null">← Back</button>
@@ -97,31 +92,30 @@
         </template>
 
         <template v-else-if="currentView === 'crm'">
-          <button type="button" class="rounded-xl border p-5 text-left hover:bg-slate-50" @click="selectedOpportunity = null">
-            <h2 class="font-semibold">Quote → Job Conversion</h2>
+          <div class="rounded-xl border p-5">
+            <h2 class="font-semibold">CRM Overview</h2>
             <div class="mt-4 grid sm:grid-cols-3 gap-3 text-center">
               <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">{{ dashboardStats.quoteConversion.quotesSent }}</p><p class="text-sm text-slate-600">Quotes Sent</p></div>
               <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">{{ dashboardStats.quoteConversion.won }}</p><p class="text-sm text-slate-600">Won</p></div>
               <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">{{ dashboardStats.quoteConversion.conversion }}%</p><p class="text-sm text-slate-600">Conversion</p></div>
             </div>
-          </button>
 
-          <div class="rounded-xl border p-5">
-            <div class="flex items-center justify-between">
-              <h2 class="font-semibold">Recent opportunities</h2>
+            <div class="mt-6 flex items-center justify-between">
+              <h3 class="font-semibold">Recent opportunities</h3>
               <span class="text-xs text-slate-400">Top 5</span>
             </div>
-            <div class="mt-4 space-y-2">
+            <div class="mt-3 space-y-2">
               <button v-for="opp in recentOpportunities" :key="opp.id" type="button" class="w-full text-left rounded-lg border p-3 flex justify-between items-center hover:bg-slate-50" @click="openOpportunity(opp.id)">
                 <div>
                   <p class="font-medium">{{ opp.id }} — {{ opp.company }}</p>
-                  <p class="text-sm text-slate-600">{{ opp.createdDate }} · ${{ opp.value.toLocaleString() }}</p>
+                  <p class="text-sm text-slate-600">{{ opp.createdDate }} · USD {{ opp.value.toLocaleString() }}</p>
                 </div>
                 <span class="text-xs px-2 py-1 rounded" :class="opportunityStageClassFor(opp.stage)">{{ opp.stage }}</span>
               </button>
             </div>
           </div>
         </template>
+
 
         <template v-else>
           <div class="rounded-xl border p-5">
@@ -275,6 +269,9 @@ const chatInputEl = ref<HTMLInputElement | null>(null)
 const chatWindowEl = ref<HTMLElement | null>(null)
 const isAiTyping = ref(false)
 
+const route = useRoute()
+const router = useRouter()
+
 const conversationState = ref<{ lastProjectId?: string; awaitingStageForProject?: boolean; lastOpportunityId?: string }>({})
 
 const allCodes = computed(() => [
@@ -363,6 +360,7 @@ function openView(view: 'dashboard' | 'jobs' | 'crm') {
   currentView.value = view
   selectedJob.value = null
   selectedOpportunity.value = null
+  router.replace({ query: { ...route.query, view } })
 }
 
 function stageClassFor(stage: string) {
@@ -635,6 +633,17 @@ async function scrollChatToBottom() {
 watch(chatMessages, scrollChatToBottom, { deep: true })
 onMounted(() => {
   recomputeQuoteStats()
+  const qv = String(route.query.view || 'dashboard')
+  if (qv === 'jobs' || qv === 'crm' || qv === 'dashboard') currentView.value = qv
   scrollChatToBottom()
+})
+
+watch(() => route.query.view, (v) => {
+  const view = String(v || 'dashboard')
+  if (view === 'jobs' || view === 'crm' || view === 'dashboard') {
+    currentView.value = view
+    selectedJob.value = null
+    selectedOpportunity.value = null
+  }
 })
 </script>
