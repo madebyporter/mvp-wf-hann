@@ -7,7 +7,7 @@
           <h1 class="text-xl font-semibold">Service Plan + Emergency + Install Ops Hub</h1>
         </div>
         <div class="nav flex gap-4 items-center">
-          <NuxtLink to="/" class="text-sm font-medium" :class="navClass('/')">dashboard</NuxtLink>
+          <NuxtLink to="/?view=dashboard" class="text-sm font-medium" :class="navClass('/')">dashboard</NuxtLink>
           <NuxtLink to="/jobs" class="text-sm font-medium" :class="navClass('/jobs')">jobs</NuxtLink>
           <NuxtLink to="/crm" class="text-sm font-medium" :class="navClass('/crm')">crm</NuxtLink>
           <button class="rounded-lg px-4 py-2 text-white font-medium" style="background:#112337">dispatch emergency</button>

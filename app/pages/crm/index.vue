@@ -8,7 +8,7 @@
         <span class="text-xs text-slate-400">{{ opportunities.length }} quotes sent</span>
       </div>
       <div class="mt-4 space-y-2">
-        <NuxtLink v-for="opp in opportunities" :key="opp.id" :to="`/crm/${opp.id}`" class="w-full text-left rounded-lg border p-3 flex justify-between items-center hover:bg-slate-50">
+        <NuxtLink v-for="opp in opportunities" :key="opp.id" :to="`/crm/${opp.id}`" class="w-full text-left rounded-lg border border-black/20 p-3 flex justify-between items-center hover:bg-slate-50">
           <div>
             <p class="font-medium">{{ opp.id }} — {{ opp.company }}</p>
             <p class="text-sm text-slate-600">{{ opp.updatedDate }} · USD {{ opp.value.toLocaleString() }}</p>

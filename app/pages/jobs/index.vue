@@ -8,7 +8,7 @@
         <span class="text-xs text-slate-400">All {{ emergencyQueue.length }} jobs</span>
       </div>
       <div class="mt-4 space-y-2">
-        <NuxtLink v-for="item in emergencyQueue" :key="item.ticket" :to="`/jobs/emergency/${item.ticket}`" class="w-full text-left rounded-lg border p-3 flex justify-between items-center hover:bg-slate-50">
+        <NuxtLink v-for="item in emergencyQueue" :key="item.ticket" :to="`/jobs/emergency/${item.ticket}`" class="w-full text-left rounded-lg border border-black/20 p-3 flex justify-between items-center hover:bg-slate-50">
           <div>
             <p class="font-medium">{{ item.ticket }} — {{ item.issue }}</p>
             <p class="text-sm text-slate-600">{{ item.city }} · ETA target {{ item.eta }}</p>
@@ -27,7 +27,7 @@
         <span class="text-xs text-slate-400">All {{ installJobs.length }} projects</span>
       </div>
       <div class="mt-4 space-y-2">
-        <NuxtLink v-for="job in installJobs" :key="job.id" :to="`/jobs/projects/${job.id}`" class="w-full text-left rounded-lg border p-3 flex justify-between items-center hover:bg-slate-50">
+        <NuxtLink v-for="job in installJobs" :key="job.id" :to="`/jobs/projects/${job.id}`" class="w-full text-left rounded-lg border border-black/20 p-3 flex justify-between items-center hover:bg-slate-50">
           <div>
             <p class="font-medium">{{ job.id }} — {{ job.client }}</p>
             <p class="text-sm text-slate-600">{{ job.scope }} · {{ job.location }}</p>
