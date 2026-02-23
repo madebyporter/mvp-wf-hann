@@ -242,6 +242,26 @@ function botReply(input: string) {
   const isUpdateIntent = /\b(set|change|mark|make|move|switch|update)\b/.test(text)
   const isStatusIntent = /\b(status|stage|where|what('| i)?s|current|progress)\b/.test(text)
 
+  const commercialStatusOptions = ['Scheduled', 'In Progress', 'Awaiting Permit', 'Permit Follow-up Sent', 'Complete', 'On Hold', 'Cancelled']
+  const emergencyStatusOptions = ['Awaiting crew', 'En route', 'On site', 'Parts check', 'Resolved', 'Closed']
+
+  if (/what.*(statuses|status options|options).*(commercial|project|prj)/i.test(text)) {
+    return `For commercial jobs (PRJ), you can set: ${commercialStatusOptions.join(', ')}.`
+  }
+
+  if (/what.*(statuses|status options|options).*(emergency|em-|dispatch)/i.test(text)) {
+    return `For emergency jobs (EM), you can set: ${emergencyStatusOptions.join(', ')}.`
+  }
+
+  if (/(what can i set|help|commands|how do i use)/i.test(text) && !targetId) {
+    return [
+      'You can ask docs-style questions and make updates.',
+      `Commercial status options: ${commercialStatusOptions.join(', ')}.`,
+      `Emergency status options: ${emergencyStatusOptions.join(', ')}.`,
+      'Examples: “what statuses can I set for commercial jobs?”, “set PRJ-4101 to complete”, “where is EM-2042?”'
+    ].join(' ')
+  }
+
   const extractTargetValue = () => {
     const toMatch = normalized.match(/\bto\b\s+([\w\s-]+)/i)?.[1]
     if (toMatch) return toMatch.trim().replace(/[.?!]$/, '')
