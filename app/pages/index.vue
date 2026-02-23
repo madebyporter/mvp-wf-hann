@@ -1,8 +1,8 @@
 <template>
-  <div class="parent h-full max-h-dvh flex flex-col min-h-0 overflow-hidden px-6 py-4">
-    <div class="main flex-1 min-h-0 grid gap-0 xl:grid-cols-[320px_minmax(0,1fr)_280px] overflow-hidden border border-slate-200 rounded-xl">
+  <div class="parent h-full max-h-dvh flex flex-col min-h-0 overflow-hidden">
+    <div class="main flex-1 min-h-0 grid gap-0 xl:grid-cols-[320px_minmax(0,1fr)_280px] xl:divide-x xl:divide-black/20 overflow-hidden border border-slate-200 rounded-xl m-4">
       <!-- AI chat rail (mocked but action-oriented) -->
-      <aside class="chat-window h-full min-h-0 overflow-y-auto p-4 space-y-4 border-r border-slate-200">
+      <aside class="chat-window h-full min-h-0 overflow-y-auto p-4 space-y-4">
         <div class="rounded-xl border p-4 bg-slate-50">
           <p class="text-xs uppercase tracking-wide text-slate-500">AI Dispatch Copilot</p>
           <p class="mt-1 text-sm text-slate-700">Answers status questions + applies quick workflow updates</p>
@@ -29,7 +29,7 @@
       </aside>
 
       <!-- Main ops center -->
-      <section class="jobqueue h-full min-h-0 overflow-y-auto p-4 space-y-4 border-r border-slate-200">
+      <section class="jobqueue h-full min-h-0 overflow-y-auto p-4 space-y-4">
         <div class="rounded-xl border p-5">
           <div class="flex items-center justify-between gap-3">
             <h2 class="font-semibold">Emergency Queue (24/7)</h2>
@@ -113,7 +113,7 @@
     </div>
 
     <!-- AI input strip (mocked) -->
-    <footer class="footer border-t pt-2 shrink-0 bg-white">
+    <footer class="footer border-t p-4 shrink-0 bg-white">
       <div class="chat-input rounded-xl border bg-slate-100 px-3 py-2 flex items-center gap-2">
         <span class="text-slate-700 font-medium mr-auto">AI Chat input</span>
         <button class="text-xs rounded-md border bg-white px-2 py-1 hover:bg-slate-50" @click="runDemo('status')">Status EM-2042</button>
