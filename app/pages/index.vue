@@ -7,20 +7,13 @@
           <p class="mt-1 text-sm text-slate-700">Answers status questions + applies workflow updates</p>
         </div>
 
-        <div v-for="(msg, i) in chatMessages" :key="i" class="max-w-[280px]">
-          <div class="rounded-xl px-4 py-3 text-sm border" :class="msg.role === 'human' ? 'ml-auto bg-white border-slate-300 text-slate-800' : 'mr-auto bg-slate-100 border-slate-200 text-slate-700'">
+        <div v-for="(msg, i) in chatMessages" :key="i" class="flex" :class="msg.role === 'human' ? 'justify-start' : 'justify-end'">
+          <div class="w-[80%] rounded-xl px-4 py-3 text-sm border" :class="msg.role === 'human' ? 'bg-white border-slate-300 text-slate-800' : 'bg-slate-100 border-slate-200 text-slate-700'">
             <p class="text-[11px] uppercase tracking-wide mb-1" :class="msg.role === 'human' ? 'text-slate-500' : 'text-blue-700'">
               {{ msg.role === 'human' ? 'Dispatcher' : 'AI Ops' }}
             </p>
             {{ msg.text }}
           </div>
-        </div>
-
-        <div class="rounded-xl border p-4 bg-blue-50 border-blue-200">
-          <p class="text-xs uppercase tracking-wide text-blue-700 font-semibold">AI actions applied</p>
-          <ul class="mt-2 space-y-2 text-sm text-slate-700">
-            <li v-for="(action, i) in actionLog" :key="i" class="rounded border border-blue-100 bg-white px-3 py-2">{{ action }}</li>
-          </ul>
         </div>
       </aside>
 
