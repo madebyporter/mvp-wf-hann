@@ -15,6 +15,17 @@
             {{ msg.text }}
           </div>
         </div>
+
+        <div v-if="isAiTyping" class="flex justify-end">
+          <div class="w-[80%] rounded-xl px-4 py-3 text-sm border bg-slate-100 border-slate-200 text-slate-700">
+            <p class="text-[11px] uppercase tracking-wide mb-1 text-blue-700">AI Ops</p>
+            <div class="flex items-center gap-1">
+              <span class="h-2 w-2 rounded-full bg-slate-400 animate-bounce [animation-delay:-0.2s]" />
+              <span class="h-2 w-2 rounded-full bg-slate-400 animate-bounce [animation-delay:-0.1s]" />
+              <span class="h-2 w-2 rounded-full bg-slate-400 animate-bounce" />
+            </div>
+          </div>
+        </div>
       </aside>
 
       <section class="jobqueue h-full min-h-0 overflow-y-auto p-4 space-y-4">
@@ -161,6 +172,7 @@ const selectedJob = ref<any>(null)
 const chatInput = ref('')
 const chatInputEl = ref<HTMLInputElement | null>(null)
 const chatWindowEl = ref<HTMLElement | null>(null)
+const isAiTyping = ref(false)
 
 const conversationState = ref<{ lastProjectId?: string; awaitingStageForProject?: boolean }>({})
 
@@ -369,11 +381,19 @@ function botReply(input: string) {
 
 async function sendChat() {
   const text = chatInput.value.trim()
-  if (!text) return
+  if (!text || isAiTyping.value) return
+
   chatMessages.value.push({ role: 'human', text })
-  const reply = botReply(text)
-  chatMessages.value.push({ role: 'ai', text: reply })
   chatInput.value = ''
+  isAiTyping.value = true
+  await scrollChatToBottom()
+
+  const delayMs = 900 + Math.floor(Math.random() * 700)
+  await new Promise((resolve) => setTimeout(resolve, delayMs))
+
+  const reply = botReply(text)
+  isAiTyping.value = false
+  chatMessages.value.push({ role: 'ai', text: reply })
   await scrollChatToBottom()
 }
 
