@@ -138,7 +138,7 @@ import chatSeed from '~/data/chatSeed.json'
 import actionSeed from '~/data/actionLogSeed.json'
 
 type EmergencyJob = { ticket: string; issue: string; city: string; eta: string; priority: string; status: string }
-type ProjectJob = { id: string; client: string; scope: string; location: string; stage: string; stageClass: string }
+type ProjectJob = { id: string; client: string; scope: string; location: string; stage: string; stageClass: string; currentWork?: string; nextStep?: string }
 
 type ChatMessage = { role: 'human' | 'ai'; text: string }
 
@@ -255,10 +255,26 @@ function botReply(input: string) {
 
   if (/(what can i set|help|commands|how do i use)/i.test(text) && !targetId) {
     return [
-      'You can ask docs-style questions and make updates.',
+      'Absolutely — quick guide:',
       `Commercial status options: ${commercialStatusOptions.join(', ')}.`,
       `Emergency status options: ${emergencyStatusOptions.join(', ')}.`,
-      'Examples: “what statuses can I set for commercial jobs?”, “set PRJ-4101 to complete”, “where is EM-2042?”'
+      'You can ask things like: “what is being worked on for Lakewood School District?”, “set PRJ-4101 to complete”, or “where is EM-2042?”'
+    ].join(' ')
+  }
+
+  const projectByName = installJobs.value.find((job) => {
+    const client = job.client.toLowerCase()
+    const location = job.location.toLowerCase()
+    return text.includes(client) || text.includes(location)
+  })
+
+  if (projectByName && /(what.*(worked on|happening|update)|status.*(for|on)|progress.*(for|on))/i.test(text)) {
+    return [
+      `Right now for ${projectByName.client}:`,
+      `${projectByName.currentWork || projectByName.scope}`,
+      `Current stage is ${projectByName.stage}.`,
+      `Next up: ${projectByName.nextStep || 'confirm next milestone and crew timing.'}`,
+      'Want me to set a new stage for this project now?'
     ].join(' ')
   }
 
@@ -285,19 +301,19 @@ function botReply(input: string) {
     if (/\breassign|assign|dispatch\b/.test(text)) {
       job.status = 'En route'
       pushAction(`${emergencyId} reassigned and status set to En route`)
-      return `Done. ${emergencyId} is now En route.`
+      return `Done — ${emergencyId} is now En route. I can also notify office/customer notes next if you want.`
     }
 
     if (isUpdateIntent) {
       const nextStatus = extractTargetValue() || 'In Progress'
       job.status = nextStatus
       pushAction(`${emergencyId} status changed to ${nextStatus}`)
-      return `Updated ${emergencyId} to ${nextStatus}.`
+      return `Got it — I updated ${emergencyId} to ${nextStatus}. Want me to adjust ETA notes too?`
     }
 
     if (isStatusIntent || /\?$/.test(text)) {
       pushAction(`Status query answered for ${emergencyId}`)
-      return `${emergencyId} is ${job.status}. ETA target is ${job.eta} in ${job.city}.`
+      return `${emergencyId} is currently ${job.status}. ETA target is ${job.eta} in ${job.city}. Want me to move it forward or leave as is?`
     }
   }
 
@@ -317,16 +333,16 @@ function botReply(input: string) {
       job.stage = nextStage
       job.stageClass = stageClassFor(nextStage)
       pushAction(`${projectId} stage changed to ${nextStage}`)
-      return `Updated ${projectId} to ${nextStage}.`
+      return `Done — ${projectId} is now ${nextStage}. If you want, I can apply the same stage to related jobs.`
     }
 
     if (isStatusIntent || /\?$/.test(text)) {
       pushAction(`Stage query answered for ${projectId}`)
-      return `${projectId} is currently ${job.stage}.`
+      return `${projectId} is currently ${job.stage}. Current work: ${job.currentWork || job.scope}`
     }
   }
 
-  return 'I can read and update jobs in this session. Try “make PRJ-4101 complete” or “where is EM-2042?”'
+  return 'I can help with status lookups, project updates, and quick docs. Try: “what is being worked on for Lakewood School District?” or “set PRJ-4101 to complete”.'
 }
 
 async function sendChat() {
