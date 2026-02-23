@@ -1,0 +1,6 @@
+[
+  { "role": "human", "text": "What is the status of EM-2042 right now?" },
+  { "role": "ai", "text": "EM-2042 is awaiting crew assignment. ETA target is 60 min in Lakewood." },
+  { "role": "human", "text": "Reassign EM-2042 to Crew A2 and notify office." },
+  { "role": "ai", "text": "Done. EM-2042 now shows En route with Crew A2. Office + customer updates queued." }
+]

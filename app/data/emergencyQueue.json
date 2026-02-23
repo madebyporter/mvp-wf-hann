@@ -1,0 +1,5 @@
+[
+  { "ticket": "EM-2041", "issue": "No heat", "city": "Parma", "eta": "45 min", "priority": "High", "status": "En route" },
+  { "ticket": "EM-2042", "issue": "Burst pipe", "city": "Lakewood", "eta": "60 min", "priority": "High", "status": "Awaiting crew" },
+  { "ticket": "EM-2043", "issue": "Boiler reset", "city": "Strongsville", "eta": "90 min", "priority": "Med", "status": "Parts check" }
+]

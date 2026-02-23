@@ -1,0 +1,26 @@
+[
+  {
+    "id": "PRJ-4101",
+    "client": "Westlake Medical Campus",
+    "scope": "Rooftop unit replacement + controls retrofit",
+    "location": "Westlake",
+    "stage": "In Progress",
+    "stageClass": "bg-blue-100 text-blue-700"
+  },
+  {
+    "id": "PRJ-4102",
+    "client": "Parma Logistics Center",
+    "scope": "Boiler room modernization + balancing",
+    "location": "Parma",
+    "stage": "Awaiting Permit",
+    "stageClass": "bg-amber-100 text-amber-700"
+  },
+  {
+    "id": "PRJ-4103",
+    "client": "Lakewood School District",
+    "scope": "Chiller controls upgrade + commissioning",
+    "location": "Lakewood",
+    "stage": "Scheduled",
+    "stageClass": "bg-emerald-100 text-emerald-700"
+  }
+]
