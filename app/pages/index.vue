@@ -170,64 +170,79 @@ function pushAction(action: string) {
 
 function botReply(input: string) {
   const normalized = input.trim()
+  const text = normalized.toLowerCase()
   const emergencyId = normalized.match(/EM-\d+/i)?.[0]?.toUpperCase()
   const projectId = normalized.match(/PRJ-\d+/i)?.[0]?.toUpperCase()
+  const targetId = emergencyId || projectId
 
-  if (emergencyId && /status|where|update/i.test(normalized)) {
+  const isUpdateIntent = /\b(set|change|mark|make|move|switch|update)\b/.test(text)
+  const isStatusIntent = /\b(status|stage|where|what('| i)?s|current|progress)\b/.test(text)
+
+  const extractTargetValue = () => {
+    const toMatch = normalized.match(/\bto\b\s+([\w\s-]+)/i)?.[1]
+    if (toMatch) return toMatch.trim().replace(/[.?!]$/, '')
+
+    if (/\bcomplete|completed|done|finish|finished\b/i.test(normalized)) return 'Complete'
+    if (/\bin\s*progress|working\s*on|started\b/i.test(normalized)) return 'In Progress'
+    if (/\bscheduled|schedule\b/i.test(normalized)) return 'Scheduled'
+    if (/\bawaiting\s*permit|permit\b/i.test(normalized)) return 'Awaiting Permit'
+    if (/\ben\s*route|dispatched\b/i.test(normalized)) return 'En route'
+    return ''
+  }
+
+  if (!targetId) {
+    return 'Give me a job ID and I can handle it. Example: “make PRJ-4101 complete” or “where is EM-2042?”'
+  }
+
+  if (emergencyId) {
     const job = emergencyQueue.value.find((j) => j.ticket === emergencyId)
     if (!job) return `I couldn't find ${emergencyId}.`
-    pushAction(`Status query answered for ${emergencyId}`)
-    return `${emergencyId} is ${job.status}. ETA target is ${job.eta} in ${job.city}.`
+
+    if (/\breassign|assign|dispatch\b/.test(text)) {
+      job.status = 'En route'
+      pushAction(`${emergencyId} reassigned and status set to En route`)
+      return `Done. ${emergencyId} is now En route.`
+    }
+
+    if (isUpdateIntent) {
+      const nextStatus = extractTargetValue() || 'In Progress'
+      job.status = nextStatus
+      pushAction(`${emergencyId} status changed to ${nextStatus}`)
+      return `Updated ${emergencyId} to ${nextStatus}.`
+    }
+
+    if (isStatusIntent || /\?$/.test(text)) {
+      pushAction(`Status query answered for ${emergencyId}`)
+      return `${emergencyId} is ${job.status}. ETA target is ${job.eta} in ${job.city}.`
+    }
   }
 
-  if (projectId && /status|stage|update/i.test(normalized) && !/set|change|mark/i.test(normalized)) {
+  if (projectId) {
     const job = installJobs.value.find((j) => j.id === projectId)
     if (!job) return `I couldn't find ${projectId}.`
-    pushAction(`Stage query answered for ${projectId}`)
-    return `${projectId} is currently ${job.stage}.`
+
+    if (/\bpermit\b/.test(text) && isUpdateIntent) {
+      job.stage = 'Permit Follow-up Sent'
+      job.stageClass = 'bg-purple-100 text-purple-700'
+      pushAction(`${projectId} permit follow-up logged`)
+      return `Done. ${projectId} marked Permit Follow-up Sent.`
+    }
+
+    if (isUpdateIntent) {
+      const nextStage = extractTargetValue() || 'In Progress'
+      job.stage = nextStage
+      job.stageClass = stageClassFor(nextStage)
+      pushAction(`${projectId} stage changed to ${nextStage}`)
+      return `Updated ${projectId} to ${nextStage}.`
+    }
+
+    if (isStatusIntent || /\?$/.test(text)) {
+      pushAction(`Stage query answered for ${projectId}`)
+      return `${projectId} is currently ${job.stage}.`
+    }
   }
 
-  if (emergencyId && /reassign|assign|dispatch/i.test(normalized)) {
-    const job = emergencyQueue.value.find((j) => j.ticket === emergencyId)
-    if (!job) return `I couldn't find ${emergencyId}.`
-    job.status = 'En route'
-    pushAction(`${emergencyId} reassigned and status set to En route`)
-    return `Done. ${emergencyId} is now En route.`
-  }
-
-  const setEmergency = normalized.match(/(EM-\d+).*(set|change|mark).*(to)\s+([\w\s-]+)/i)
-  if (setEmergency) {
-    const id = setEmergency[1].toUpperCase()
-    const nextStatus = setEmergency[4].trim()
-    const job = emergencyQueue.value.find((j) => j.ticket === id)
-    if (!job) return `I couldn't find ${id}.`
-    job.status = nextStatus
-    pushAction(`${id} status changed to ${nextStatus}`)
-    return `Updated ${id} to ${nextStatus}.`
-  }
-
-  const setProject = normalized.match(/(PRJ-\d+).*(set|change|mark).*(to)\s+([\w\s-]+)/i)
-  if (setProject) {
-    const id = setProject[1].toUpperCase()
-    const nextStage = setProject[4].trim()
-    const job = installJobs.value.find((j) => j.id === id)
-    if (!job) return `I couldn't find ${id}.`
-    job.stage = nextStage
-    job.stageClass = stageClassFor(nextStage)
-    pushAction(`${id} stage changed to ${nextStage}`)
-    return `Updated ${id} to ${nextStage}.`
-  }
-
-  if (projectId && /permit/i.test(normalized)) {
-    const job = installJobs.value.find((j) => j.id === projectId)
-    if (!job) return `I couldn't find ${projectId}.`
-    job.stage = 'Permit Follow-up Sent'
-    job.stageClass = 'bg-purple-100 text-purple-700'
-    pushAction(`${projectId} permit follow-up logged`)
-    return `Done. ${projectId} marked Permit Follow-up Sent.`
-  }
-
-  return 'I can help with status lookups and updates. Try: “Status of EM-2042” or “Set PRJ-4102 to In Progress”.'
+  return 'I can read and update jobs in this session. Try “make PRJ-4101 complete” or “where is EM-2042?”'
 }
 
 async function sendChat() {
