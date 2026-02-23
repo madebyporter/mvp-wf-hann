@@ -1,7 +1,7 @@
 <template>
   <div class="parent h-full max-h-dvh flex flex-col min-h-0 overflow-hidden">
-    <div class="main flex-1 min-h-0 grid gap-0 xl:grid-cols-[320px_minmax(0,1fr)_280px] xl:divide-x xl:divide-black/20 overflow-hidden border border-slate-200 rounded-xl m-4">
-      <!-- AI chat rail (mocked but action-oriented) -->
+    <div class="main flex-1 min-h-0 grid gap-0 xl:grid-cols-[320px_minmax(0,1fr)_280px] xl:divide-x xl:divide-black overflow-hidden">
+      <!-- AI chat rail -->
       <aside class="chat-window h-full min-h-0 overflow-y-auto p-4 space-y-4">
         <div class="rounded-xl border p-4 bg-slate-50">
           <p class="text-xs uppercase tracking-wide text-slate-500">AI Dispatch Copilot</p>
@@ -28,61 +28,100 @@
         </div>
       </aside>
 
-      <!-- Main ops center -->
+      <!-- Middle jobqueue, swaps list/detail in-place -->
       <section class="jobqueue h-full min-h-0 overflow-y-auto p-4 space-y-4">
-        <div class="rounded-xl border p-5">
-          <div class="flex items-center justify-between gap-3">
-            <h2 class="font-semibold">Emergency Queue (24/7)</h2>
-            <span class="text-xs px-2 py-1 rounded bg-rose-100 text-rose-700">Priority response</span>
+        <template v-if="!selectedJob">
+          <div class="rounded-xl border p-5">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="font-semibold">Emergency Queue (24/7)</h2>
+              <span class="text-xs px-2 py-1 rounded bg-rose-100 text-rose-700">Priority response</span>
+            </div>
+            <div class="mt-4 space-y-2">
+              <button
+                v-for="item in emergencyQueue"
+                :key="item.ticket"
+                type="button"
+                class="w-full text-left rounded-lg border p-3 flex justify-between items-center hover:bg-slate-50"
+                @click="openEmergency(item.ticket)"
+              >
+                <div>
+                  <p class="font-medium">{{ item.ticket }} — {{ item.issue }}</p>
+                  <p class="text-sm text-slate-600">{{ item.city }} · ETA target {{ item.eta }}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs px-2 py-1 rounded" :class="item.priority === 'High' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'">{{ item.priority }}</span>
+                  <span class="text-xs px-2 py-1 rounded bg-slate-100 text-slate-700">{{ item.status }}</span>
+                </div>
+              </button>
+            </div>
           </div>
-          <div class="mt-4 space-y-2">
-            <NuxtLink
-              v-for="item in emergencyQueue"
-              :key="item.ticket"
-              :to="`/jobs/emergency/${item.ticket}`"
-              class="rounded-lg border p-3 flex justify-between items-center hover:bg-slate-50"
-            >
-              <div>
-                <p class="font-medium">{{ item.ticket }} — {{ item.issue }}</p>
-                <p class="text-sm text-slate-600">{{ item.city }} · ETA target {{ item.eta }}</p>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-xs px-2 py-1 rounded" :class="item.priority === 'High' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'">{{ item.priority }}</span>
-                <span class="text-xs px-2 py-1 rounded bg-slate-100 text-slate-700">{{ item.status }}</span>
-              </div>
-            </NuxtLink>
-          </div>
-        </div>
 
-        <div class="rounded-xl border p-5">
-          <div class="flex items-center justify-between gap-3">
-            <h2 class="font-semibold">Commercial / Non-Emergency Install Pipeline</h2>
-            <span class="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">Scheduled projects</span>
+          <div class="rounded-xl border p-5">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="font-semibold">Commercial / Non-Emergency Install Pipeline</h2>
+              <span class="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">Scheduled projects</span>
+            </div>
+            <div class="mt-4 space-y-2">
+              <button
+                v-for="job in installJobs"
+                :key="job.id"
+                type="button"
+                class="w-full text-left rounded-lg border p-3 flex justify-between items-center hover:bg-slate-50"
+                @click="openProject(job.id)"
+              >
+                <div>
+                  <p class="font-medium">{{ job.id }} — {{ job.client }}</p>
+                  <p class="text-sm text-slate-600">{{ job.scope }} · {{ job.location }}</p>
+                </div>
+                <span class="text-xs px-2 py-1 rounded" :class="job.stageClass">{{ job.stage }}</span>
+              </button>
+            </div>
           </div>
-          <div class="mt-4 space-y-2">
-            <NuxtLink
-              v-for="job in installJobs"
-              :key="job.id"
-              :to="`/jobs/projects/${job.id}`"
-              class="rounded-lg border p-3 flex justify-between items-center hover:bg-slate-50"
-            >
-              <div>
-                <p class="font-medium">{{ job.id }} — {{ job.client }}</p>
-                <p class="text-sm text-slate-600">{{ job.scope }} · {{ job.location }}</p>
-              </div>
-              <span class="text-xs px-2 py-1 rounded" :class="job.stageClass">{{ job.stage }}</span>
-            </NuxtLink>
-          </div>
-        </div>
 
-        <div class="rounded-xl border p-5">
-          <h2 class="font-semibold">Quote → Job Conversion</h2>
-          <div class="mt-4 grid sm:grid-cols-3 gap-3 text-center">
-            <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">31</p><p class="text-sm text-slate-600">Quotes Sent</p></div>
-            <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">19</p><p class="text-sm text-slate-600">Won</p></div>
-            <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">61%</p><p class="text-sm text-slate-600">Conversion</p></div>
+          <div class="rounded-xl border p-5">
+            <h2 class="font-semibold">Quote → Job Conversion</h2>
+            <div class="mt-4 grid sm:grid-cols-3 gap-3 text-center">
+              <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">31</p><p class="text-sm text-slate-600">Quotes Sent</p></div>
+              <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">19</p><p class="text-sm text-slate-600">Won</p></div>
+              <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">61%</p><p class="text-sm text-slate-600">Conversion</p></div>
+            </div>
           </div>
-        </div>
+        </template>
+
+        <template v-else>
+          <button type="button" class="text-sm text-blue-700 hover:underline" @click="selectedJob = null">← Back to dashboard</button>
+
+          <div class="rounded-xl border p-5">
+            <div class="flex items-center justify-between">
+              <h2 class="font-semibold">{{ detailTitle }}</h2>
+              <span v-if="selectedJob.priority" class="text-xs px-2 py-1 rounded" :class="selectedJob.priority === 'High' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'">{{ selectedJob.priority }}</span>
+              <span v-else class="text-xs px-2 py-1 rounded" :class="selectedJob.stageClass">{{ selectedJob.stage }}</span>
+            </div>
+
+            <div class="mt-4 grid md:grid-cols-2 gap-6 text-sm">
+              <div class="space-y-2">
+                <p><span class="text-slate-500">Location</span><br><strong>{{ selectedJob.city || selectedJob.location }}</strong></p>
+                <p v-if="selectedJob.issue"><span class="text-slate-500">Issue</span><br><strong>{{ selectedJob.issue }}</strong></p>
+                <p v-if="selectedJob.scope"><span class="text-slate-500">Scope</span><br><strong>{{ selectedJob.scope }}</strong></p>
+              </div>
+              <div class="space-y-2">
+                <p v-if="selectedJob.eta"><span class="text-slate-500">ETA target</span><br><strong>{{ selectedJob.eta }}</strong></p>
+                <p v-if="selectedJob.status"><span class="text-slate-500">Dispatch status</span><br><strong>{{ selectedJob.status }}</strong></p>
+                <p v-if="selectedJob.stage"><span class="text-slate-500">Project stage</span><br><strong>{{ selectedJob.stage }}</strong></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-xl border p-5">
+            <h3 class="font-semibold">Recommended next actions</h3>
+            <ul class="mt-3 list-disc pl-5 text-sm text-slate-700 space-y-1">
+              <li v-if="selectedJob.ticket">Send ETA update to customer and office coordinator.</li>
+              <li v-if="selectedJob.ticket">Pre-stage likely parts based on issue profile.</li>
+              <li v-if="selectedJob.id">Confirm permit and inspection timeline with PM.</li>
+              <li v-if="selectedJob.id">Lock crew allocation for installation window.</li>
+            </ul>
+          </div>
+        </template>
       </section>
 
       <!-- Right stat rail -->
@@ -112,7 +151,6 @@
       </aside>
     </div>
 
-    <!-- AI input strip (mocked) -->
     <footer class="footer border-t p-4 shrink-0 bg-white">
       <div class="chat-input rounded-xl border bg-slate-100 px-3 py-2 flex items-center gap-2">
         <span class="text-slate-700 font-medium mr-auto">AI Chat input</span>
@@ -125,15 +163,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
-const emergencyQueue = ref([
+type EmergencyJob = {
+  ticket: string
+  issue: string
+  city: string
+  eta: string
+  priority: string
+  status: string
+}
+
+type ProjectJob = {
+  id: string
+  client: string
+  scope: string
+  location: string
+  stage: string
+  stageClass: string
+}
+
+const emergencyQueue = ref<EmergencyJob[]>([
   { ticket: 'EM-2041', issue: 'No heat', city: 'Parma', eta: '45 min', priority: 'High', status: 'En route' },
   { ticket: 'EM-2042', issue: 'Burst pipe', city: 'Lakewood', eta: '60 min', priority: 'High', status: 'Awaiting crew' },
   { ticket: 'EM-2043', issue: 'Boiler reset', city: 'Strongsville', eta: '90 min', priority: 'Med', status: 'Parts check' }
 ])
 
-const installJobs = ref([
+const installJobs = ref<ProjectJob[]>([
   {
     id: 'PRJ-4101',
     client: 'Westlake Medical Campus',
@@ -159,6 +215,23 @@ const installJobs = ref([
     stageClass: 'bg-emerald-100 text-emerald-700'
   }
 ])
+
+const selectedJob = ref<any>(null)
+
+const detailTitle = computed(() => {
+  if (!selectedJob.value) return ''
+  return selectedJob.value.ticket
+    ? `Emergency Job Detail — ${selectedJob.value.ticket}`
+    : `Project Detail — ${selectedJob.value.id}`
+})
+
+function openEmergency(ticket: string) {
+  selectedJob.value = emergencyQueue.value.find((job) => job.ticket === ticket) || null
+}
+
+function openProject(id: string) {
+  selectedJob.value = installJobs.value.find((job) => job.id === id) || null
+}
 
 const chatMessages = ref([
   { role: 'human', text: 'What is the status of EM-2042 right now?' },
