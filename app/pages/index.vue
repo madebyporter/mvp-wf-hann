@@ -1,14 +1,14 @@
 <template>
   <div class="space-y-6">
-    <div class="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)_280px]">
-      <!-- AI chat rail (mocked) -->
+    <div class="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)_280px]">
+      <!-- AI chat rail (mocked but action-oriented) -->
       <aside class="space-y-4">
         <div class="rounded-xl border p-4 bg-slate-50">
-          <p class="text-xs uppercase tracking-wide text-slate-500">AI Copilot</p>
-          <p class="mt-1 text-sm text-slate-700">Live dispatch + install assistant (mock UI)</p>
+          <p class="text-xs uppercase tracking-wide text-slate-500">AI Dispatch Copilot</p>
+          <p class="mt-1 text-sm text-slate-700">Answers status questions + applies quick workflow updates</p>
         </div>
 
-        <div v-for="(msg, i) in chatMessages" :key="i" class="max-w-[240px]">
+        <div v-for="(msg, i) in chatMessages" :key="i" class="max-w-[280px]">
           <div
             class="rounded-xl px-4 py-3 text-sm border"
             :class="msg.role === 'human' ? 'ml-auto bg-white border-slate-300 text-slate-800' : 'mr-auto bg-slate-100 border-slate-200 text-slate-700'"
@@ -18,6 +18,13 @@
             </p>
             {{ msg.text }}
           </div>
+        </div>
+
+        <div class="rounded-xl border p-4 bg-blue-50 border-blue-200">
+          <p class="text-xs uppercase tracking-wide text-blue-700 font-semibold">AI actions applied</p>
+          <ul class="mt-2 space-y-2 text-sm text-slate-700">
+            <li v-for="(action, i) in actionLog" :key="i" class="rounded border border-blue-100 bg-white px-3 py-2">{{ action }}</li>
+          </ul>
         </div>
       </aside>
 
@@ -39,7 +46,10 @@
                 <p class="font-medium">{{ item.ticket }} — {{ item.issue }}</p>
                 <p class="text-sm text-slate-600">{{ item.city }} · ETA target {{ item.eta }}</p>
               </div>
-              <span class="text-xs px-2 py-1 rounded" :class="item.priority === 'High' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'">{{ item.priority }}</span>
+              <div class="flex items-center gap-2">
+                <span class="text-xs px-2 py-1 rounded" :class="item.priority === 'High' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'">{{ item.priority }}</span>
+                <span class="text-xs px-2 py-1 rounded bg-slate-100 text-slate-700">{{ item.status }}</span>
+              </div>
             </NuxtLink>
           </div>
         </div>
@@ -103,23 +113,31 @@
     </div>
 
     <!-- AI input strip (mocked) -->
-    <div class="border-t pt-4">
+    <div class="border-t pt-4 space-y-3">
       <div class="rounded-xl border bg-slate-100 px-4 py-3 flex items-center justify-between">
         <span class="text-slate-700 font-medium">AI Chat input</span>
         <button class="rounded-full bg-slate-900 text-white px-3 py-1.5 text-sm">➤</button>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <button class="text-xs rounded-lg border px-3 py-2 hover:bg-slate-50" @click="runDemo('status')">Ask: "Status of EM-2042?"</button>
+        <button class="text-xs rounded-lg border px-3 py-2 hover:bg-slate-50" @click="runDemo('reroute')">Action: Reassign EM-2042 to Crew A2</button>
+        <button class="text-xs rounded-lg border px-3 py-2 hover:bg-slate-50" @click="runDemo('permit')">Action: Mark PRJ-4102 permit follow-up sent</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-const emergencyQueue = [
-  { ticket: 'EM-2041', issue: 'No heat', city: 'Parma', eta: '45 min', priority: 'High' },
-  { ticket: 'EM-2042', issue: 'Burst pipe', city: 'Lakewood', eta: '60 min', priority: 'High' },
-  { ticket: 'EM-2043', issue: 'Boiler reset', city: 'Strongsville', eta: '90 min', priority: 'Med' }
-]
+import { ref } from 'vue'
 
-const installJobs = [
+const emergencyQueue = ref([
+  { ticket: 'EM-2041', issue: 'No heat', city: 'Parma', eta: '45 min', priority: 'High', status: 'En route' },
+  { ticket: 'EM-2042', issue: 'Burst pipe', city: 'Lakewood', eta: '60 min', priority: 'High', status: 'Awaiting crew' },
+  { ticket: 'EM-2043', issue: 'Boiler reset', city: 'Strongsville', eta: '90 min', priority: 'Med', status: 'Parts check' }
+])
+
+const installJobs = ref([
   {
     id: 'PRJ-4101',
     client: 'Westlake Medical Campus',
@@ -144,14 +162,41 @@ const installJobs = [
     stage: 'Scheduled',
     stageClass: 'bg-emerald-100 text-emerald-700'
   }
-]
+])
 
-const chatMessages = [
-  { role: 'human', text: 'Can we hold EM-2042 until Crew B1 clears their prior call?' },
-  { role: 'ai', text: 'I can reroute Crew A2 and still hit the 60-minute ETA. Approve reroute?' },
-  { role: 'human', text: 'Approve. Also check permit status on PRJ-4102.' },
-  { role: 'ai', text: 'Permit office follow-up drafted. I can send reminder + update PM notes.' },
-  { role: 'human', text: 'Do it and flag anything that risks Friday completion.' },
-  { role: 'ai', text: 'Done. One risk flagged: controls panel delivery may slip by 1 day.' }
-]
+const chatMessages = ref([
+  { role: 'human', text: 'What is the status of EM-2042 right now?' },
+  { role: 'ai', text: 'EM-2042 is awaiting crew assignment. ETA target is 60 min in Lakewood.' },
+  { role: 'human', text: 'Reassign EM-2042 to Crew A2 and notify office.' },
+  { role: 'ai', text: 'Done. EM-2042 now shows En route with Crew A2. Office + customer updates queued.' }
+])
+
+const actionLog = ref([
+  'Status query answered for EM-2042',
+  'EM-2042 reassigned to Crew A2',
+  'Customer + office notifications drafted'
+])
+
+function runDemo(mode: 'status' | 'reroute' | 'permit') {
+  if (mode === 'status') {
+    chatMessages.value.push({ role: 'human', text: 'Status of EM-2042?' })
+    chatMessages.value.push({ role: 'ai', text: `EM-2042 is currently ${emergencyQueue.value[1].status}. ETA target remains 60 min.` })
+    actionLog.value.unshift('AI returned live status for EM-2042')
+    return
+  }
+
+  if (mode === 'reroute') {
+    emergencyQueue.value[1].status = 'En route'
+    chatMessages.value.push({ role: 'human', text: 'Reassign EM-2042 to Crew A2.' })
+    chatMessages.value.push({ role: 'ai', text: 'Reassignment complete. Crew A2 dispatched and ETA confirmation sent.' })
+    actionLog.value.unshift('AI updated EM-2042 status to En route and dispatched Crew A2')
+    return
+  }
+
+  installJobs.value[1].stage = 'Permit Follow-up Sent'
+  installJobs.value[1].stageClass = 'bg-purple-100 text-purple-700'
+  chatMessages.value.push({ role: 'human', text: 'Send permit follow-up for PRJ-4102 and update record.' })
+  chatMessages.value.push({ role: 'ai', text: 'Done. PRJ-4102 marked Permit Follow-up Sent and PM notified.' })
+  actionLog.value.unshift('AI updated PRJ-4102 stage and logged permit follow-up')
+}
 </script>
