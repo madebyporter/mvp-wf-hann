@@ -1,6 +1,6 @@
 <template>
-  <div class="space-y-4">
-    <NuxtLink to="/" class="text-sm text-blue-700 hover:underline">← Back to dashboard</NuxtLink>
+  <div class="flex flex-col gap-4">
+    <NuxtLink to="/jobs" class="text-sm text-blue-700 hover:underline">← Back to jobs</NuxtLink>
 
     <div class="rounded-xl border p-5">
       <div class="flex items-center justify-between gap-3">

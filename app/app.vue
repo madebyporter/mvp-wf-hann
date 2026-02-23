@@ -7,16 +7,18 @@
           <h1 class="text-xl font-semibold">Service Plan + Emergency + Install Ops Hub</h1>
         </div>
         <div class="nav flex gap-4 items-center">
-          <NuxtLink to="/?view=dashboard" class="text-sm font-medium" :class="navClass('dashboard')">dashboard</NuxtLink>
-          <NuxtLink to="/?view=jobs" class="text-sm font-medium" :class="navClass('jobs')">jobs</NuxtLink>
-          <NuxtLink to="/?view=crm" class="text-sm font-medium" :class="navClass('crm')">crm</NuxtLink>
+          <NuxtLink to="/" class="text-sm font-medium" :class="navClass('/')">dashboard</NuxtLink>
+          <NuxtLink to="/jobs" class="text-sm font-medium" :class="navClass('/jobs')">jobs</NuxtLink>
+          <NuxtLink to="/crm" class="text-sm font-medium" :class="navClass('/crm')">crm</NuxtLink>
           <button class="rounded-lg px-4 py-2 text-white font-medium" style="background:#112337">dispatch emergency</button>
         </div>
       </div>
     </header>
 
     <main class="main flex-1 min-h-0 overflow-hidden">
-      <NuxtPage />
+      <NuxtLayout>
+        <NuxtPage />
+      </NuxtLayout>
     </main>
   </div>
 </template>
@@ -24,9 +26,9 @@
 <script setup lang="ts">
 const route = useRoute()
 
-function navClass(view: 'dashboard' | 'jobs' | 'crm') {
-  const active = (route.query.view as string) || 'dashboard'
-  return active === view
+function navClass(path: string) {
+  const active = route.path === path || (path === '/' && route.path === '/')
+  return active
     ? 'text-slate-900 underline underline-offset-4'
     : 'text-slate-500 hover:text-slate-700'
 }
