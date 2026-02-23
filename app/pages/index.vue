@@ -29,7 +29,101 @@
       </aside>
 
       <section class="jobqueue h-full min-h-0 overflow-y-auto p-4 space-y-4">
-        <template v-if="!selectedJob">
+        <div class="flex items-center gap-4 text-sm border-b pb-2">
+          <button type="button" class="font-medium" :class="currentView === 'dashboard' ? 'text-slate-900' : 'text-slate-500'" @click="openView('dashboard')">Dashboard</button>
+          <button type="button" class="font-medium" :class="currentView === 'jobs' ? 'text-slate-900' : 'text-slate-500'" @click="openView('jobs')">Jobs</button>
+          <button type="button" class="font-medium" :class="currentView === 'crm' ? 'text-slate-900' : 'text-slate-500'" @click="openView('crm')">CRM</button>
+        </div>
+
+        <template v-if="currentView !== 'crm' && selectedJob">
+          <button type="button" class="text-sm text-blue-700 hover:underline" @click="selectedJob = null">← Back</button>
+          <div class="rounded-xl border p-5">
+            <div class="flex items-center justify-between">
+              <h2 class="font-semibold">{{ detailTitle }}</h2>
+              <span v-if="selectedJob.priority" class="text-xs px-2 py-1 rounded" :class="selectedJob.priority === 'High' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'">{{ selectedJob.priority }}</span>
+              <span v-else class="text-xs px-2 py-1 rounded" :class="selectedJob.stageClass">{{ selectedJob.stage }}</span>
+            </div>
+            <div class="mt-4 grid md:grid-cols-2 gap-6 text-sm">
+              <div class="space-y-2">
+                <p><span class="text-slate-500">Location</span><br><strong>{{ selectedJob.city || selectedJob.location }}</strong></p>
+                <p v-if="selectedJob.issue"><span class="text-slate-500">Issue</span><br><strong>{{ selectedJob.issue }}</strong></p>
+                <p v-if="selectedJob.scope"><span class="text-slate-500">Scope</span><br><strong>{{ selectedJob.scope }}</strong></p>
+              </div>
+              <div class="space-y-2">
+                <p v-if="selectedJob.eta"><span class="text-slate-500">ETA target</span><br><strong>{{ selectedJob.eta }}</strong></p>
+                <p v-if="selectedJob.status"><span class="text-slate-500">Dispatch status</span><br><strong>{{ selectedJob.status }}</strong></p>
+                <p v-if="selectedJob.stage"><span class="text-slate-500">Project stage</span><br><strong>{{ selectedJob.stage }}</strong></p>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="selectedJob.id && selectedJob.notes?.length" class="rounded-xl border p-5">
+            <h3 class="font-semibold">Project notes timeline</h3>
+            <ul class="mt-3 space-y-2 text-sm text-slate-700">
+              <li v-for="(note, idx) in selectedJob.notes" :key="idx" class="flex gap-2">
+                <span class="text-slate-400">•</span>
+                <span>{{ note }}</span>
+              </li>
+            </ul>
+          </div>
+        </template>
+
+        <template v-else-if="currentView === 'crm' && selectedOpportunity">
+          <button type="button" class="text-sm text-blue-700 hover:underline" @click="selectedOpportunity = null">← Back to CRM</button>
+          <div class="rounded-xl border p-5">
+            <div class="flex items-center justify-between">
+              <h2 class="font-semibold">{{ opportunityDetailTitle }}</h2>
+              <span class="text-xs px-2 py-1 rounded" :class="opportunityStageClassFor(selectedOpportunity.stage)">{{ selectedOpportunity.stage }}</span>
+            </div>
+            <div class="mt-4 grid md:grid-cols-2 gap-6 text-sm">
+              <div class="space-y-2">
+                <p><span class="text-slate-500">Company</span><br><strong>{{ selectedOpportunity.company }}</strong></p>
+                <p><span class="text-slate-500">Contact</span><br><strong>{{ selectedOpportunity.contact }}</strong></p>
+                <p><span class="text-slate-500">Source</span><br><strong>{{ selectedOpportunity.source }}</strong></p>
+              </div>
+              <div class="space-y-2">
+                <p><span class="text-slate-500">Created</span><br><strong>{{ selectedOpportunity.createdDate }}</strong></p>
+                <p><span class="text-slate-500">Last update</span><br><strong>{{ selectedOpportunity.updatedDate }}</strong></p>
+                <p><span class="text-slate-500">Value</span><br><strong>${{ selectedOpportunity.value.toLocaleString() }}</strong></p>
+              </div>
+            </div>
+          </div>
+          <div v-if="selectedOpportunity.notes?.length" class="rounded-xl border p-5">
+            <h3 class="font-semibold">Opportunity timeline</h3>
+            <ul class="mt-3 space-y-2 text-sm text-slate-700">
+              <li v-for="(note, idx) in selectedOpportunity.notes" :key="idx" class="flex gap-2"><span class="text-slate-400">•</span><span>{{ note }}</span></li>
+            </ul>
+          </div>
+        </template>
+
+        <template v-else-if="currentView === 'crm'">
+          <button type="button" class="rounded-xl border p-5 text-left hover:bg-slate-50" @click="selectedOpportunity = null">
+            <h2 class="font-semibold">Quote → Job Conversion</h2>
+            <div class="mt-4 grid sm:grid-cols-3 gap-3 text-center">
+              <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">{{ dashboardStats.quoteConversion.quotesSent }}</p><p class="text-sm text-slate-600">Quotes Sent</p></div>
+              <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">{{ dashboardStats.quoteConversion.won }}</p><p class="text-sm text-slate-600">Won</p></div>
+              <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">{{ dashboardStats.quoteConversion.conversion }}%</p><p class="text-sm text-slate-600">Conversion</p></div>
+            </div>
+          </button>
+
+          <div class="rounded-xl border p-5">
+            <div class="flex items-center justify-between">
+              <h2 class="font-semibold">Recent opportunities</h2>
+              <span class="text-xs text-slate-400">Top 5</span>
+            </div>
+            <div class="mt-4 space-y-2">
+              <button v-for="opp in recentOpportunities" :key="opp.id" type="button" class="w-full text-left rounded-lg border p-3 flex justify-between items-center hover:bg-slate-50" @click="openOpportunity(opp.id)">
+                <div>
+                  <p class="font-medium">{{ opp.id }} — {{ opp.company }}</p>
+                  <p class="text-sm text-slate-600">{{ opp.createdDate }} · ${{ opp.value.toLocaleString() }}</p>
+                </div>
+                <span class="text-xs px-2 py-1 rounded" :class="opportunityStageClassFor(opp.stage)">{{ opp.stage }}</span>
+              </button>
+            </div>
+          </div>
+        </template>
+
+        <template v-else>
           <div class="rounded-xl border p-5">
             <div class="flex items-center justify-between gap-3">
               <h2 class="font-semibold">Emergency Queue (24/7)</h2>
@@ -65,46 +159,31 @@
             </div>
           </div>
 
-          <div class="rounded-xl border p-5">
-            <h2 class="font-semibold">Quote → Job Conversion</h2>
-            <div class="mt-4 grid sm:grid-cols-3 gap-3 text-center">
-              <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">{{ dashboardStats.quoteConversion.quotesSent }}</p><p class="text-sm text-slate-600">Quotes Sent</p></div>
-              <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">{{ dashboardStats.quoteConversion.won }}</p><p class="text-sm text-slate-600">Won</p></div>
-              <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">{{ dashboardStats.quoteConversion.conversion }}%</p><p class="text-sm text-slate-600">Conversion</p></div>
-            </div>
+          <div v-if="currentView === 'dashboard'" class="rounded-xl border p-5">
+            <button type="button" class="w-full text-left" @click="openView('crm')">
+              <h2 class="font-semibold">Quote → Job Conversion</h2>
+              <div class="mt-4 grid sm:grid-cols-3 gap-3 text-center">
+                <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">{{ dashboardStats.quoteConversion.quotesSent }}</p><p class="text-sm text-slate-600">Quotes Sent</p></div>
+                <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">{{ dashboardStats.quoteConversion.won }}</p><p class="text-sm text-slate-600">Won</p></div>
+                <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">{{ dashboardStats.quoteConversion.conversion }}%</p><p class="text-sm text-slate-600">Conversion</p></div>
+              </div>
+            </button>
           </div>
-        </template>
 
-        <template v-else>
-          <button type="button" class="text-sm text-blue-700 hover:underline" @click="selectedJob = null">← Back to dashboard</button>
-          <div class="rounded-xl border p-5">
+          <div v-if="currentView === 'dashboard'" class="rounded-xl border p-5">
             <div class="flex items-center justify-between">
-              <h2 class="font-semibold">{{ detailTitle }}</h2>
-              <span v-if="selectedJob.priority" class="text-xs px-2 py-1 rounded" :class="selectedJob.priority === 'High' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'">{{ selectedJob.priority }}</span>
-              <span v-else class="text-xs px-2 py-1 rounded" :class="selectedJob.stageClass">{{ selectedJob.stage }}</span>
+              <h2 class="font-semibold">Most recent opportunities</h2>
+              <button type="button" class="text-xs text-blue-700" @click="openView('crm')">View all</button>
             </div>
-            <div class="mt-4 grid md:grid-cols-2 gap-6 text-sm">
-              <div class="space-y-2">
-                <p><span class="text-slate-500">Location</span><br><strong>{{ selectedJob.city || selectedJob.location }}</strong></p>
-                <p v-if="selectedJob.issue"><span class="text-slate-500">Issue</span><br><strong>{{ selectedJob.issue }}</strong></p>
-                <p v-if="selectedJob.scope"><span class="text-slate-500">Scope</span><br><strong>{{ selectedJob.scope }}</strong></p>
-              </div>
-              <div class="space-y-2">
-                <p v-if="selectedJob.eta"><span class="text-slate-500">ETA target</span><br><strong>{{ selectedJob.eta }}</strong></p>
-                <p v-if="selectedJob.status"><span class="text-slate-500">Dispatch status</span><br><strong>{{ selectedJob.status }}</strong></p>
-                <p v-if="selectedJob.stage"><span class="text-slate-500">Project stage</span><br><strong>{{ selectedJob.stage }}</strong></p>
-              </div>
+            <div class="mt-3 space-y-2">
+              <button v-for="opp in recentOpportunities" :key="opp.id" type="button" class="w-full text-left rounded-lg border p-3 flex justify-between items-center hover:bg-slate-50" @click="openOpportunity(opp.id)">
+                <div>
+                  <p class="font-medium">{{ opp.company }}</p>
+                  <p class="text-sm text-slate-600">{{ opp.createdDate }}</p>
+                </div>
+                <span class="text-xs px-2 py-1 rounded" :class="opportunityStageClassFor(opp.stage)">{{ opp.stage }}</span>
+              </button>
             </div>
-          </div>
-
-          <div v-if="selectedJob.id && selectedJob.notes?.length" class="rounded-xl border p-5">
-            <h3 class="font-semibold">Project notes timeline</h3>
-            <ul class="mt-3 space-y-2 text-sm text-slate-700">
-              <li v-for="(note, idx) in selectedJob.notes" :key="idx" class="flex gap-2">
-                <span class="text-slate-400">•</span>
-                <span>{{ note }}</span>
-              </li>
-            </ul>
           </div>
         </template>
       </section>
@@ -158,6 +237,7 @@ import installSeed from '~/data/installJobs.json'
 import chatSeed from '~/data/chatSeed.json'
 import actionSeed from '~/data/actionLogSeed.json'
 import dashboardStatsSeed from '~/data/dashboardStats.json'
+import opportunitiesSeed from '~/data/opportunities.json'
 
 type EmergencyJob = { ticket: string; issue: string; city: string; eta: string; priority: string; status: string }
 type ProjectJob = { id: string; client: string; scope: string; location: string; stage: string; stageClass: string; currentWork?: string; nextStep?: string; notes?: string[] }
@@ -168,33 +248,50 @@ type DashboardStats = {
   homeServicePlans: { renewalsDue7d: number; scheduledVisits: number; atRiskAccounts: number }
   installCapacity: { largeInstallsActive: number; crewsAssigned: number; pendingPermits: number }
 }
+type Opportunity = {
+  id: string
+  company: string
+  contact: string
+  stage: string
+  value: number
+  createdDate: string
+  updatedDate: string
+  source: string
+  notes?: string[]
+}
 
 const emergencyQueue = ref<EmergencyJob[]>(JSON.parse(JSON.stringify(emergencySeed)))
 const installJobs = ref<ProjectJob[]>(JSON.parse(JSON.stringify(installSeed)))
 const chatMessages = ref<ChatMessage[]>(JSON.parse(JSON.stringify(chatSeed)))
 const actionLog = ref<string[]>(JSON.parse(JSON.stringify(actionSeed)))
 const dashboardStats = ref<DashboardStats>(JSON.parse(JSON.stringify(dashboardStatsSeed)))
+const opportunities = ref<Opportunity[]>(JSON.parse(JSON.stringify(opportunitiesSeed)))
 
+const currentView = ref<'dashboard' | 'jobs' | 'crm'>('dashboard')
+const selectedOpportunity = ref<Opportunity | null>(null)
 const selectedJob = ref<any>(null)
 const chatInput = ref('')
 const chatInputEl = ref<HTMLInputElement | null>(null)
 const chatWindowEl = ref<HTMLElement | null>(null)
 const isAiTyping = ref(false)
 
-const conversationState = ref<{ lastProjectId?: string; awaitingStageForProject?: boolean }>({})
+const conversationState = ref<{ lastProjectId?: string; awaitingStageForProject?: boolean; lastOpportunityId?: string }>({})
 
 const allCodes = computed(() => [
   ...emergencyQueue.value.map((j) => j.ticket),
-  ...installJobs.value.map((j) => j.id)
+  ...installJobs.value.map((j) => j.id),
+  ...opportunities.value.map((o) => o.id)
 ])
+
+const recentOpportunities = computed(() => [...opportunities.value].sort((a, b) => b.updatedDate.localeCompare(a.updatedDate)).slice(0, 5))
 
 const suggestedCode = computed(() => {
   const value = chatInput.value
   const upper = value.toUpperCase()
-  const partial = upper.match(/(?:\b|^)(EM|PRJ)(?:-|\s)?([A-Z0-9]*)$/)
+  const partial = upper.match(/(?:\b|^)(EM|PRJ|OPP)(?:-|\s)?([A-Z0-9]*)$/)
 
   if (partial) {
-    const prefix = partial[1] === 'EM' ? 'EM-' : 'PRJ-'
+    const prefix = partial[1] === 'EM' ? 'EM-' : partial[1] === 'PRJ' ? 'PRJ-' : 'OPP-'
     const typed = partial[2] || ''
     const match = allCodes.value.find((code) => code.startsWith(`${prefix}${typed}`))
     return match || ''
@@ -210,7 +307,7 @@ const suggestionTail = computed(() => {
   if (!code) return ''
   const value = chatInput.value
   const upper = value.toUpperCase()
-  const partial = upper.match(/(?:\b|^)(EM|PRJ)(?:-|\s)?([A-Z0-9]*)$/)
+  const partial = upper.match(/(?:\b|^)(EM|PRJ|OPP)(?:-|\s)?([A-Z0-9]*)$/)
 
   if (partial) {
     const typedPrefix = partial[1]
@@ -227,7 +324,7 @@ const suggestionTail = computed(() => {
 function acceptSuggestion() {
   if (!suggestedCode.value) return
   const value = chatInput.value
-  const partial = value.match(/(?:\b|^)(EM|PRJ)(?:-|\s)?([A-Z0-9]*)$/i)
+  const partial = value.match(/(?:\b|^)(EM|PRJ|OPP)(?:-|\s)?([A-Z0-9]*)$/i)
 
   if (partial) {
     const start = partial.index ?? 0
@@ -244,6 +341,11 @@ const detailTitle = computed(() => {
   return selectedJob.value.ticket ? `Emergency Job Detail — ${selectedJob.value.ticket}` : `Project Detail — ${selectedJob.value.id}`
 })
 
+const opportunityDetailTitle = computed(() => {
+  if (!selectedOpportunity.value) return ''
+  return `Opportunity Detail — ${selectedOpportunity.value.id}`
+})
+
 function openEmergency(ticket: string) {
   selectedJob.value = emergencyQueue.value.find((job) => job.ticket === ticket) || null
 }
@@ -252,11 +354,44 @@ function openProject(id: string) {
   selectedJob.value = installJobs.value.find((job) => job.id === id) || null
 }
 
+function openOpportunity(id: string) {
+  selectedOpportunity.value = opportunities.value.find((opp) => opp.id === id) || null
+  currentView.value = 'crm'
+}
+
+function openView(view: 'dashboard' | 'jobs' | 'crm') {
+  currentView.value = view
+  selectedJob.value = null
+  selectedOpportunity.value = null
+}
+
 function stageClassFor(stage: string) {
   if (/progress/i.test(stage)) return 'bg-blue-100 text-blue-700'
   if (/permit|await/i.test(stage)) return 'bg-amber-100 text-amber-700'
   if (/scheduled/i.test(stage)) return 'bg-emerald-100 text-emerald-700'
   return 'bg-purple-100 text-purple-700'
+}
+
+function opportunityStageClassFor(stage: string) {
+  if (/won/i.test(stage)) return 'bg-emerald-100 text-emerald-700'
+  if (/proposal/i.test(stage)) return 'bg-blue-100 text-blue-700'
+  if (/lost/i.test(stage)) return 'bg-rose-100 text-rose-700'
+  return 'bg-amber-100 text-amber-700'
+}
+
+function normalizeOpportunityStage(input: string) {
+  if (/won|closed\s*won/.test(input)) return 'Won'
+  if (/lost|closed\s*lost/.test(input)) return 'Lost'
+  if (/proposal|quote\s*sent/.test(input)) return 'Proposal Sent'
+  if (/lead|new/.test(input)) return 'Lead'
+  return ''
+}
+
+function recomputeQuoteStats() {
+  const quotesSent = opportunities.value.length
+  const won = opportunities.value.filter((o) => /won/i.test(o.stage)).length
+  const conversion = quotesSent ? Math.round((won / quotesSent) * 100) : 0
+  dashboardStats.value.quoteConversion = { quotesSent, won, conversion }
 }
 
 function pushAction(action: string) {
@@ -268,6 +403,7 @@ function botReply(input: string) {
   const text = normalized.toLowerCase()
   const emergencyId = normalized.match(/EM-\d+/i)?.[0]?.toUpperCase()
   const projectId = normalized.match(/PRJ-\d+/i)?.[0]?.toUpperCase()
+  const opportunityId = normalized.match(/OPP-\d+/i)?.[0]?.toUpperCase()
 
   const isUpdateIntent = /\b(set|change|mark|make|move|switch|update)\b/.test(text)
   const isStatusIntent = /\b(status|stage|where|what('| i)?s|current|progress|worked on|happening|update)\b/.test(text)
@@ -290,7 +426,7 @@ function botReply(input: string) {
 
   const targetValue = extractTargetValue()
   const isCasualAssignment = /\b(is now|now|set to|moved to|move to|went to|switch to|make it|mark it|also)\b/.test(text)
-  const targetId = emergencyId || projectId || conversationState.value.lastProjectId
+  const targetId = emergencyId || projectId || opportunityId || conversationState.value.lastProjectId || conversationState.value.lastOpportunityId
 
   if (/^(yes|yeah|yep|sure|do it|go ahead)$/i.test(text) && conversationState.value.awaitingStageForProject && conversationState.value.lastProjectId) {
     return `Perfect — what stage should I set for ${conversationState.value.lastProjectId}? For example: In Progress, Scheduled, Complete, or On Hold.`
@@ -334,6 +470,34 @@ function botReply(input: string) {
     return `Current stats — Quotes sent: ${quoteConversion.quotesSent}, Won: ${quoteConversion.won}, Conversion: ${quoteConversion.conversion}%, Renewals due (7d): ${homeServicePlans.renewalsDue7d}, Scheduled visits: ${homeServicePlans.scheduledVisits}, At-risk accounts: ${homeServicePlans.atRiskAccounts}, Large installs active: ${installCapacity.largeInstallsActive}, Crews assigned: ${installCapacity.crewsAssigned}, Pending permits: ${installCapacity.pendingPermits}.`
   }
 
+  const opportunityByName = opportunities.value.find((opp) => {
+    const company = opp.company.toLowerCase()
+    return text.includes(company) || text.includes(company.split(' ')[0])
+  })
+
+  const opportunityStage = normalizeOpportunityStage(text)
+  if (opportunityByName && opportunityStage && (isUpdateIntent || isCasualAssignment) && !/\?/.test(text)) {
+    opportunityByName.stage = opportunityStage
+    opportunityByName.updatedDate = new Date().toISOString().slice(0, 10)
+    opportunityByName.notes = opportunityByName.notes || []
+    opportunityByName.notes.unshift(`Stage changed to ${opportunityStage} via dispatcher chat.`)
+    conversationState.value.lastOpportunityId = opportunityByName.id
+    pushAction(`${opportunityByName.id} updated to ${opportunityStage}`)
+    recomputeQuoteStats()
+    return `Done — ${opportunityByName.company} is now ${opportunityStage}.`
+  }
+
+  if ((/opportunity|crm|lead|proposal|won|lost/.test(text) && opportunityByName && /\?/.test(text)) || (opportunityByName && /status|stage/.test(text))) {
+    conversationState.value.lastOpportunityId = opportunityByName.id
+    return `${opportunityByName.id} (${opportunityByName.company}) is currently ${opportunityByName.stage}. Created ${opportunityByName.createdDate}, last updated ${opportunityByName.updatedDate}.`
+  }
+
+  if (/recent opportunities|recent leads|show crm|open crm/.test(text)) {
+    currentView.value = 'crm'
+    selectedOpportunity.value = null
+    return `Opened CRM view. Top recent opportunities are ${recentOpportunities.value.map((o) => o.id).join(', ')}.`
+  }
+
   const projectByName = installJobs.value.find((job) => {
     const client = job.client.toLowerCase()
     const location = job.location.toLowerCase()
@@ -362,7 +526,27 @@ function botReply(input: string) {
   }
 
   if (!targetId) {
-    return 'I can help — tell me the job code (EM-xxxx or PRJ-xxxx), or a client name like “Lakewood School District”.'
+    return 'I can help — tell me a code (EM/PRJ/OPP) or a client/company name, and I can update status/stage immediately.'
+  }
+
+  if (/^OPP-\d+$/i.test(targetId)) {
+    const opp = opportunities.value.find((o) => o.id === targetId)
+    if (!opp) return `I couldn't find ${targetId}.`
+    conversationState.value.lastOpportunityId = opp.id
+
+    if (opportunityStage && (isUpdateIntent || isCasualAssignment || /^(yes|yeah|yep|sure)/.test(text))) {
+      opp.stage = opportunityStage
+      opp.updatedDate = new Date().toISOString().slice(0, 10)
+      opp.notes = opp.notes || []
+      opp.notes.unshift(`Stage changed to ${opportunityStage} via dispatcher chat.`)
+      pushAction(`${opp.id} updated to ${opportunityStage}`)
+      recomputeQuoteStats()
+      return `Done — ${opp.id} is now ${opportunityStage}.`
+    }
+
+    if (isStatusIntent || /\?$/.test(text)) {
+      return `${opp.id} for ${opp.company} is ${opp.stage}. Value is $${opp.value.toLocaleString()}.`
+    }
   }
 
   if (/^PRJ-\d+$/i.test(targetId)) {
@@ -415,7 +599,7 @@ function botReply(input: string) {
     }
   }
 
-  return 'I can answer project updates by client name and also change stages/statuses. Try “what is being worked on for Lakewood School District?” then “set it to In Progress”.'
+  return 'I can handle jobs + CRM updates. Try: “westlake is now complete”, “set OPP-5008 to won”, or “open crm”.'
 }
 
 async function sendChat() {
@@ -449,5 +633,8 @@ async function scrollChatToBottom() {
 }
 
 watch(chatMessages, scrollChatToBottom, { deep: true })
-onMounted(scrollChatToBottom)
+onMounted(() => {
+  recomputeQuoteStats()
+  scrollChatToBottom()
+})
 </script>

@@ -1,0 +1,436 @@
+[
+  {
+    "id": "OPP-5001",
+    "company": "Westlake Medical Campus",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 12000,
+    "createdDate": "2026-01-10",
+    "updatedDate": "2026-01-20",
+    "source": "Referral",
+    "notes": [
+      "Discovery call logged on 2026-01-10.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5002",
+    "company": "Parma Logistics Center",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 13750,
+    "createdDate": "2026-01-11",
+    "updatedDate": "2026-01-21",
+    "source": "Inbound",
+    "notes": [
+      "Discovery call logged on 2026-01-11.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5003",
+    "company": "Lakewood School District",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 15500,
+    "createdDate": "2026-01-12",
+    "updatedDate": "2026-01-22",
+    "source": "Referral",
+    "notes": [
+      "Discovery call logged on 2026-01-12.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5004",
+    "company": "Strongsville Civic Center",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 17250,
+    "createdDate": "2026-01-13",
+    "updatedDate": "2026-01-23",
+    "source": "Inbound",
+    "notes": [
+      "Discovery call logged on 2026-01-13.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5005",
+    "company": "Cleveland Family Dental",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 19000,
+    "createdDate": "2026-01-14",
+    "updatedDate": "2026-01-24",
+    "source": "Referral",
+    "notes": [
+      "Discovery call logged on 2026-01-14.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5006",
+    "company": "North Ridge Manufacturing",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 20750,
+    "createdDate": "2026-01-15",
+    "updatedDate": "2026-01-25",
+    "source": "Inbound",
+    "notes": [
+      "Discovery call logged on 2026-01-15.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5007",
+    "company": "Aurora Property Group",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 22500,
+    "createdDate": "2026-01-16",
+    "updatedDate": "2026-01-26",
+    "source": "Referral",
+    "notes": [
+      "Discovery call logged on 2026-01-16.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5008",
+    "company": "Brook Park Distribution",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 24250,
+    "createdDate": "2026-01-17",
+    "updatedDate": "2026-01-27",
+    "source": "Inbound",
+    "notes": [
+      "Discovery call logged on 2026-01-17.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5009",
+    "company": "Mentor Senior Living",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 26000,
+    "createdDate": "2026-01-18",
+    "updatedDate": "2026-01-28",
+    "source": "Referral",
+    "notes": [
+      "Discovery call logged on 2026-01-18.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5010",
+    "company": "Rocky River Retail Plaza",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 27750,
+    "createdDate": "2026-01-19",
+    "updatedDate": "2026-01-29",
+    "source": "Inbound",
+    "notes": [
+      "Discovery call logged on 2026-01-19.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5011",
+    "company": "Euclid Office Complex",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 29500,
+    "createdDate": "2026-01-20",
+    "updatedDate": "2026-01-30",
+    "source": "Referral",
+    "notes": [
+      "Discovery call logged on 2026-01-20.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5012",
+    "company": "Medina Sports Facility",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 31250,
+    "createdDate": "2026-01-21",
+    "updatedDate": "2026-01-31",
+    "source": "Inbound",
+    "notes": [
+      "Discovery call logged on 2026-01-21.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5013",
+    "company": "Avon Tech Park",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 33000,
+    "createdDate": "2026-01-22",
+    "updatedDate": "2026-02-01",
+    "source": "Referral",
+    "notes": [
+      "Discovery call logged on 2026-01-22.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5014",
+    "company": "Berea Apartment Holdings",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 34750,
+    "createdDate": "2026-01-23",
+    "updatedDate": "2026-02-02",
+    "source": "Inbound",
+    "notes": [
+      "Discovery call logged on 2026-01-23.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5015",
+    "company": "Shaker Heights Clinic",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 36500,
+    "createdDate": "2026-01-24",
+    "updatedDate": "2026-02-03",
+    "source": "Referral",
+    "notes": [
+      "Discovery call logged on 2026-01-24.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5016",
+    "company": "Solon Warehouse Group",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 38250,
+    "createdDate": "2026-01-25",
+    "updatedDate": "2026-02-04",
+    "source": "Inbound",
+    "notes": [
+      "Discovery call logged on 2026-01-25.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5017",
+    "company": "Willoughby Dental Care",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 40000,
+    "createdDate": "2026-01-26",
+    "updatedDate": "2026-02-05",
+    "source": "Referral",
+    "notes": [
+      "Discovery call logged on 2026-01-26.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5018",
+    "company": "Lorain Food Processing",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 41750,
+    "createdDate": "2026-01-27",
+    "updatedDate": "2026-02-06",
+    "source": "Inbound",
+    "notes": [
+      "Discovery call logged on 2026-01-27.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5019",
+    "company": "Kent State Annex",
+    "contact": "Ops Director",
+    "stage": "Won",
+    "value": 43500,
+    "createdDate": "2026-01-28",
+    "updatedDate": "2026-02-07",
+    "source": "Referral",
+    "notes": [
+      "Discovery call logged on 2026-01-28.",
+      "Latest pipeline update: Won."
+    ]
+  },
+  {
+    "id": "OPP-5020",
+    "company": "Garfield Heights Schools",
+    "contact": "Ops Director",
+    "stage": "Proposal Sent",
+    "value": 45250,
+    "createdDate": "2026-01-29",
+    "updatedDate": "2026-02-08",
+    "source": "Inbound",
+    "notes": [
+      "Discovery call logged on 2026-01-29.",
+      "Latest pipeline update: Proposal Sent."
+    ]
+  },
+  {
+    "id": "OPP-5021",
+    "company": "Olmsted Municipal Garage",
+    "contact": "Ops Director",
+    "stage": "Proposal Sent",
+    "value": 47000,
+    "createdDate": "2026-01-30",
+    "updatedDate": "2026-02-09",
+    "source": "Referral",
+    "notes": [
+      "Discovery call logged on 2026-01-30.",
+      "Latest pipeline update: Proposal Sent."
+    ]
+  },
+  {
+    "id": "OPP-5022",
+    "company": "Mayfield Property Mgmt",
+    "contact": "Ops Director",
+    "stage": "Proposal Sent",
+    "value": 48750,
+    "createdDate": "2026-01-31",
+    "updatedDate": "2026-02-10",
+    "source": "Inbound",
+    "notes": [
+      "Discovery call logged on 2026-01-31.",
+      "Latest pipeline update: Proposal Sent."
+    ]
+  },
+  {
+    "id": "OPP-5023",
+    "company": "Beachwood Legal Group",
+    "contact": "Ops Director",
+    "stage": "Proposal Sent",
+    "value": 50500,
+    "createdDate": "2026-02-01",
+    "updatedDate": "2026-02-11",
+    "source": "Referral",
+    "notes": [
+      "Discovery call logged on 2026-02-01.",
+      "Latest pipeline update: Proposal Sent."
+    ]
+  },
+  {
+    "id": "OPP-5024",
+    "company": "Twinsburg Assembly Plant",
+    "contact": "Ops Director",
+    "stage": "Proposal Sent",
+    "value": 52250,
+    "createdDate": "2026-02-02",
+    "updatedDate": "2026-02-12",
+    "source": "Inbound",
+    "notes": [
+      "Discovery call logged on 2026-02-02.",
+      "Latest pipeline update: Proposal Sent."
+    ]
+  },
+  {
+    "id": "OPP-5025",
+    "company": "Hudson Rehab Center",
+    "contact": "Ops Director",
+    "stage": "Proposal Sent",
+    "value": 54000,
+    "createdDate": "2026-02-03",
+    "updatedDate": "2026-02-13",
+    "source": "Referral",
+    "notes": [
+      "Discovery call logged on 2026-02-03.",
+      "Latest pipeline update: Proposal Sent."
+    ]
+  },
+  {
+    "id": "OPP-5026",
+    "company": "Brunswick Cold Storage",
+    "contact": "Ops Director",
+    "stage": "Proposal Sent",
+    "value": 55750,
+    "createdDate": "2026-02-04",
+    "updatedDate": "2026-02-14",
+    "source": "Inbound",
+    "notes": [
+      "Discovery call logged on 2026-02-04.",
+      "Latest pipeline update: Proposal Sent."
+    ]
+  },
+  {
+    "id": "OPP-5027",
+    "company": "Independence Office Suites",
+    "contact": "Ops Director",
+    "stage": "Proposal Sent",
+    "value": 57500,
+    "createdDate": "2026-02-05",
+    "updatedDate": "2026-02-15",
+    "source": "Referral",
+    "notes": [
+      "Discovery call logged on 2026-02-05.",
+      "Latest pipeline update: Proposal Sent."
+    ]
+  },
+  {
+    "id": "OPP-5028",
+    "company": "Fairview Hospitality Group",
+    "contact": "Ops Director",
+    "stage": "Lead",
+    "value": 59250,
+    "createdDate": "2026-02-06",
+    "updatedDate": "2026-02-16",
+    "source": "Inbound",
+    "notes": [
+      "Discovery call logged on 2026-02-06.",
+      "Latest pipeline update: Lead."
+    ]
+  },
+  {
+    "id": "OPP-5029",
+    "company": "Maple Heights Transit Ops",
+    "contact": "Ops Director",
+    "stage": "Lead",
+    "value": 61000,
+    "createdDate": "2026-02-07",
+    "updatedDate": "2026-02-17",
+    "source": "Referral",
+    "notes": [
+      "Discovery call logged on 2026-02-07.",
+      "Latest pipeline update: Lead."
+    ]
+  },
+  {
+    "id": "OPP-5030",
+    "company": "Bay Village Community Center",
+    "contact": "Ops Director",
+    "stage": "Lead",
+    "value": 62750,
+    "createdDate": "2026-02-08",
+    "updatedDate": "2026-02-18",
+    "source": "Inbound",
+    "notes": [
+      "Discovery call logged on 2026-02-08.",
+      "Latest pipeline update: Lead."
+    ]
+  },
+  {
+    "id": "OPP-5031",
+    "company": "Cuyahoga Contractor Supply",
+    "contact": "Ops Director",
+    "stage": "Lead",
+    "value": 64500,
+    "createdDate": "2026-02-09",
+    "updatedDate": "2026-02-19",
+    "source": "Referral",
+    "notes": [
+      "Discovery call logged on 2026-02-09.",
+      "Latest pipeline update: Lead."
+    ]
+  }
+]
