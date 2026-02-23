@@ -281,6 +281,8 @@ function botReply(input: string) {
     return ''
   }
 
+  const targetValue = extractTargetValue()
+  const isCasualAssignment = /\b(is now|now|set to|moved to|move to|went to|switch to|make it|mark it|also)\b/.test(text)
   const targetId = emergencyId || projectId || conversationState.value.lastProjectId
 
   if (/^(yes|yeah|yep|sure|do it|go ahead)$/i.test(text) && conversationState.value.awaitingStageForProject && conversationState.value.lastProjectId) {
@@ -309,6 +311,15 @@ function botReply(input: string) {
     const location = job.location.toLowerCase()
     return text.includes(client) || text.includes(location)
   })
+
+  if (projectByName && targetValue && (isUpdateIntent || isCasualAssignment) && !/\?/.test(text)) {
+    projectByName.stage = targetValue
+    projectByName.stageClass = stageClassFor(targetValue)
+    pushAction(`${projectByName.id} stage changed to ${targetValue}`)
+    conversationState.value.lastProjectId = projectByName.id
+    conversationState.value.awaitingStageForProject = false
+    return `Got it — updated ${projectByName.client} (${projectByName.id}) to ${targetValue}.`
+  }
 
   if (projectByName && isStatusIntent) {
     conversationState.value.lastProjectId = projectByName.id
@@ -339,8 +350,8 @@ function botReply(input: string) {
       return `Done — ${job.id} is now Permit Follow-up Sent. Want me to add a note in the timeline too?`
     }
 
-    if (isUpdateIntent || (conversationState.value.awaitingStageForProject && !!extractTargetValue())) {
-      const nextStage = extractTargetValue() || 'In Progress'
+    if (isUpdateIntent || (targetValue && isCasualAssignment && !/\?/.test(text)) || (conversationState.value.awaitingStageForProject && !!targetValue)) {
+      const nextStage = targetValue || 'In Progress'
       job.stage = nextStage
       job.stageClass = stageClassFor(nextStage)
       pushAction(`${job.id} stage changed to ${nextStage}`)
