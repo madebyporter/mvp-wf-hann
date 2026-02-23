@@ -68,9 +68,9 @@
           <div class="rounded-xl border p-5">
             <h2 class="font-semibold">Quote → Job Conversion</h2>
             <div class="mt-4 grid sm:grid-cols-3 gap-3 text-center">
-              <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">31</p><p class="text-sm text-slate-600">Quotes Sent</p></div>
-              <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">19</p><p class="text-sm text-slate-600">Won</p></div>
-              <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">61%</p><p class="text-sm text-slate-600">Conversion</p></div>
+              <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">{{ dashboardStats.quoteConversion.quotesSent }}</p><p class="text-sm text-slate-600">Quotes Sent</p></div>
+              <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">{{ dashboardStats.quoteConversion.won }}</p><p class="text-sm text-slate-600">Won</p></div>
+              <div class="rounded-lg bg-slate-50 p-4"><p class="text-2xl font-bold">{{ dashboardStats.quoteConversion.conversion }}%</p><p class="text-sm text-slate-600">Conversion</p></div>
             </div>
           </div>
         </template>
@@ -113,17 +113,17 @@
         <div class="rounded-xl border p-5">
           <h2 class="font-semibold">Home Service Plans</h2>
           <ul class="mt-3 space-y-2 text-sm">
-            <li class="flex justify-between"><span>Renewals due (7d)</span><strong>46</strong></li>
-            <li class="flex justify-between"><span>Scheduled visits</span><strong>28</strong></li>
-            <li class="flex justify-between"><span>At-risk accounts</span><strong>9</strong></li>
+            <li class="flex justify-between"><span>Renewals due (7d)</span><strong>{{ dashboardStats.homeServicePlans.renewalsDue7d }}</strong></li>
+            <li class="flex justify-between"><span>Scheduled visits</span><strong>{{ dashboardStats.homeServicePlans.scheduledVisits }}</strong></li>
+            <li class="flex justify-between"><span>At-risk accounts</span><strong>{{ dashboardStats.homeServicePlans.atRiskAccounts }}</strong></li>
           </ul>
         </div>
         <div class="rounded-xl border p-5">
           <h2 class="font-semibold">Install Capacity Snapshot</h2>
           <ul class="mt-3 space-y-2 text-sm">
-            <li class="flex justify-between"><span>Large installs active</span><strong>7</strong></li>
-            <li class="flex justify-between"><span>Crews assigned</span><strong>11</strong></li>
-            <li class="flex justify-between"><span>Pending permits</span><strong>3</strong></li>
+            <li class="flex justify-between"><span>Large installs active</span><strong>{{ dashboardStats.installCapacity.largeInstallsActive }}</strong></li>
+            <li class="flex justify-between"><span>Crews assigned</span><strong>{{ dashboardStats.installCapacity.crewsAssigned }}</strong></li>
+            <li class="flex justify-between"><span>Pending permits</span><strong>{{ dashboardStats.installCapacity.pendingPermits }}</strong></li>
           </ul>
         </div>
       </aside>
@@ -157,16 +157,23 @@ import emergencySeed from '~/data/emergencyQueue.json'
 import installSeed from '~/data/installJobs.json'
 import chatSeed from '~/data/chatSeed.json'
 import actionSeed from '~/data/actionLogSeed.json'
+import dashboardStatsSeed from '~/data/dashboardStats.json'
 
 type EmergencyJob = { ticket: string; issue: string; city: string; eta: string; priority: string; status: string }
 type ProjectJob = { id: string; client: string; scope: string; location: string; stage: string; stageClass: string; currentWork?: string; nextStep?: string; notes?: string[] }
 
 type ChatMessage = { role: 'human' | 'ai'; text: string }
+type DashboardStats = {
+  quoteConversion: { quotesSent: number; won: number; conversion: number }
+  homeServicePlans: { renewalsDue7d: number; scheduledVisits: number; atRiskAccounts: number }
+  installCapacity: { largeInstallsActive: number; crewsAssigned: number; pendingPermits: number }
+}
 
 const emergencyQueue = ref<EmergencyJob[]>(JSON.parse(JSON.stringify(emergencySeed)))
 const installJobs = ref<ProjectJob[]>(JSON.parse(JSON.stringify(installSeed)))
 const chatMessages = ref<ChatMessage[]>(JSON.parse(JSON.stringify(chatSeed)))
 const actionLog = ref<string[]>(JSON.parse(JSON.stringify(actionSeed)))
+const dashboardStats = ref<DashboardStats>(JSON.parse(JSON.stringify(dashboardStatsSeed)))
 
 const selectedJob = ref<any>(null)
 const chatInput = ref('')
@@ -304,6 +311,27 @@ function botReply(input: string) {
       `Emergency status options: ${emergencyStatusOptions.join(', ')}.`,
       'You can ask things like: “what is being worked on for Lakewood School District?”, “set PRJ-4101 to complete”, or “where is EM-2042?”'
     ].join(' ')
+  }
+
+  if (/\b(quote|quotes|conversion|won|renewals|scheduled visits|at-risk|capacity|crews assigned|pending permits)\b/.test(text)) {
+    const { quoteConversion, homeServicePlans, installCapacity } = dashboardStats.value
+
+    if (/how many.*quotes|quotes sent|quote count/.test(text)) {
+      return `Quotes sent so far: ${quoteConversion.quotesSent}. Won: ${quoteConversion.won}. Conversion: ${quoteConversion.conversion}%.`
+    }
+
+    if (/how many.*won|jobs won|wins\b/.test(text)) {
+      return `Won so far: ${quoteConversion.won} out of ${quoteConversion.quotesSent} quotes (${quoteConversion.conversion}% conversion).`
+    }
+
+    if (/renewals/.test(text)) return `Renewals due in 7 days: ${homeServicePlans.renewalsDue7d}.`
+    if (/scheduled visits/.test(text)) return `Scheduled visits: ${homeServicePlans.scheduledVisits}.`
+    if (/at-risk/.test(text)) return `At-risk accounts: ${homeServicePlans.atRiskAccounts}.`
+    if (/large installs/.test(text)) return `Large installs active: ${installCapacity.largeInstallsActive}.`
+    if (/crews assigned/.test(text)) return `Crews assigned: ${installCapacity.crewsAssigned}.`
+    if (/pending permits/.test(text)) return `Pending permits: ${installCapacity.pendingPermits}.`
+
+    return `Current stats — Quotes sent: ${quoteConversion.quotesSent}, Won: ${quoteConversion.won}, Conversion: ${quoteConversion.conversion}%, Renewals due (7d): ${homeServicePlans.renewalsDue7d}, Scheduled visits: ${homeServicePlans.scheduledVisits}, At-risk accounts: ${homeServicePlans.atRiskAccounts}, Large installs active: ${installCapacity.largeInstallsActive}, Crews assigned: ${installCapacity.crewsAssigned}, Pending permits: ${installCapacity.pendingPermits}.`
   }
 
   const projectByName = installJobs.value.find((job) => {

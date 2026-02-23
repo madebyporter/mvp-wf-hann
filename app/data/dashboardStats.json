@@ -1,0 +1,17 @@
+{
+  "quoteConversion": {
+    "quotesSent": 31,
+    "won": 19,
+    "conversion": 61
+  },
+  "homeServicePlans": {
+    "renewalsDue7d": 46,
+    "scheduledVisits": 28,
+    "atRiskAccounts": 9
+  },
+  "installCapacity": {
+    "largeInstallsActive": 7,
+    "crewsAssigned": 11,
+    "pendingPermits": 3
+  }
+}
