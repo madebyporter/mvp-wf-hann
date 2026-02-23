@@ -22,7 +22,7 @@
           <div class="rounded-xl border p-5">
             <div class="flex items-center justify-between gap-3">
               <h2 class="font-semibold">Emergency Queue (24/7)</h2>
-              <span class="text-xs px-2 py-1 rounded bg-rose-100 text-rose-700">Priority response</span>
+              <span class="text-xs text-slate-400">Priority response</span>
             </div>
             <div class="mt-4 space-y-2">
               <button v-for="item in emergencyQueue" :key="item.ticket" type="button" class="w-full text-left rounded-lg border p-3 flex justify-between items-center hover:bg-slate-50" @click="openEmergency(item.ticket)">
@@ -41,7 +41,7 @@
           <div class="rounded-xl border p-5">
             <div class="flex items-center justify-between gap-3">
               <h2 class="font-semibold">Commercial / Non-Emergency Install Pipeline</h2>
-              <span class="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">Scheduled projects</span>
+              <span class="text-xs text-slate-400">Scheduled projects</span>
             </div>
             <div class="mt-4 space-y-2">
               <button v-for="job in installJobs" :key="job.id" type="button" class="w-full text-left rounded-lg border p-3 flex justify-between items-center hover:bg-slate-50" @click="openProject(job.id)">
@@ -110,13 +110,20 @@
 
     <footer class="footer border-t p-4 shrink-0 bg-white">
       <form class="chat-input rounded-xl border bg-slate-100 px-3 py-2 flex items-center gap-2" @submit.prevent="sendChat">
-        <input
-          v-model="chatInput"
-          class="mr-auto w-full bg-transparent outline-none text-sm text-slate-800"
-          placeholder="How can I help you..."
-        >
-        <button type="button" class="text-xs rounded-md border bg-white px-2 py-1 hover:bg-slate-50" @click="quickAsk('Status of EM-2042')">Status EM-2042</button>
-        <button type="button" class="text-xs rounded-md border bg-white px-2 py-1 hover:bg-slate-50" @click="quickAsk('Reassign EM-2042 to Crew A2')">Reassign EM-2042</button>
+        <div class="mr-auto w-full relative">
+          <input
+            ref="chatInputEl"
+            v-model="chatInput"
+            class="w-full bg-transparent outline-none text-sm text-slate-800 relative z-10"
+            placeholder="How can I help you..."
+            @keydown.tab.prevent="acceptSuggestion"
+          >
+          <div v-if="suggestionTail" class="absolute inset-y-0 left-0 flex items-center text-sm text-slate-400 pointer-events-none">
+            <span class="invisible">{{ chatInput }}</span><span>{{ suggestionTail }}</span>
+          </div>
+        </div>
+        <button type="button" class="text-xs rounded-md border bg-white px-2 py-1 hover:bg-slate-50 whitespace-nowrap" @click="quickAsk('Status of EM-2042')">Status EM-2042</button>
+        <button type="button" class="text-xs rounded-md border bg-white px-2 py-1 hover:bg-slate-50 whitespace-nowrap" @click="quickAsk('Reassign EM-2042 to Crew A2')">Reassign EM-2042</button>
         <button type="submit" class="rounded-full bg-slate-900 text-white px-3 py-1.5 text-sm">➤</button>
       </form>
     </footer>
@@ -142,7 +149,64 @@ const actionLog = ref<string[]>(JSON.parse(JSON.stringify(actionSeed)))
 
 const selectedJob = ref<any>(null)
 const chatInput = ref('')
+const chatInputEl = ref<HTMLInputElement | null>(null)
 const chatWindowEl = ref<HTMLElement | null>(null)
+
+const allCodes = computed(() => [
+  ...emergencyQueue.value.map((j) => j.ticket),
+  ...installJobs.value.map((j) => j.id)
+])
+
+const suggestedCode = computed(() => {
+  const value = chatInput.value
+  const upper = value.toUpperCase()
+  const partial = upper.match(/(?:\b|^)(EM|PRJ)(?:-|\s)?([A-Z0-9]*)$/)
+
+  if (partial) {
+    const prefix = partial[1] === 'EM' ? 'EM-' : 'PRJ-'
+    const typed = partial[2] || ''
+    const match = allCodes.value.find((code) => code.startsWith(`${prefix}${typed}`))
+    return match || ''
+  }
+
+  if (/\bset\s+p$/i.test(value)) return 'PRJ-4101'
+  if (/\bset\s+e$/i.test(value)) return 'EM-2042'
+  return ''
+})
+
+const suggestionTail = computed(() => {
+  const code = suggestedCode.value
+  if (!code) return ''
+  const value = chatInput.value
+  const upper = value.toUpperCase()
+  const partial = upper.match(/(?:\b|^)(EM|PRJ)(?:-|\s)?([A-Z0-9]*)$/)
+
+  if (partial) {
+    const typedPrefix = partial[1]
+    const typedRest = partial[2] || ''
+    const normalizedTyped = `${typedPrefix}-${typedRest}`
+    if (!code.startsWith(normalizedTyped)) return ''
+    return code.slice(normalizedTyped.length)
+  }
+
+  if (/\bset\s+[pe]$/i.test(value)) return code.slice(1)
+  return ''
+})
+
+function acceptSuggestion() {
+  if (!suggestedCode.value) return
+  const value = chatInput.value
+  const partial = value.match(/(?:\b|^)(EM|PRJ)(?:-|\s)?([A-Z0-9]*)$/i)
+
+  if (partial) {
+    const start = partial.index ?? 0
+    chatInput.value = `${value.slice(0, start)}${suggestedCode.value}`
+  } else if (/\bset\s+[pe]$/i.test(value)) {
+    chatInput.value = `${value.slice(0, -1)}${suggestedCode.value}`
+  }
+
+  nextTick(() => chatInputEl.value?.focus())
+}
 
 const detailTitle = computed(() => {
   if (!selectedJob.value) return ''
