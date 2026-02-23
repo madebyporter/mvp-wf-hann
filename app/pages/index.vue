@@ -85,6 +85,16 @@
               </div>
             </div>
           </div>
+
+          <div v-if="selectedJob.id && selectedJob.notes?.length" class="rounded-xl border p-5">
+            <h3 class="font-semibold">Project notes timeline</h3>
+            <ul class="mt-3 space-y-2 text-sm text-slate-700">
+              <li v-for="(note, idx) in selectedJob.notes" :key="idx" class="flex gap-2">
+                <span class="text-slate-400">•</span>
+                <span>{{ note }}</span>
+              </li>
+            </ul>
+          </div>
         </template>
       </section>
 
@@ -138,7 +148,7 @@ import chatSeed from '~/data/chatSeed.json'
 import actionSeed from '~/data/actionLogSeed.json'
 
 type EmergencyJob = { ticket: string; issue: string; city: string; eta: string; priority: string; status: string }
-type ProjectJob = { id: string; client: string; scope: string; location: string; stage: string; stageClass: string; currentWork?: string; nextStep?: string }
+type ProjectJob = { id: string; client: string; scope: string; location: string; stage: string; stageClass: string; currentWork?: string; nextStep?: string; notes?: string[] }
 
 type ChatMessage = { role: 'human' | 'ai'; text: string }
 
@@ -151,6 +161,8 @@ const selectedJob = ref<any>(null)
 const chatInput = ref('')
 const chatInputEl = ref<HTMLInputElement | null>(null)
 const chatWindowEl = ref<HTMLElement | null>(null)
+
+const conversationState = ref<{ lastProjectId?: string; awaitingStageForProject?: boolean }>({})
 
 const allCodes = computed(() => [
   ...emergencyQueue.value.map((j) => j.ticket),
@@ -237,13 +249,31 @@ function botReply(input: string) {
   const text = normalized.toLowerCase()
   const emergencyId = normalized.match(/EM-\d+/i)?.[0]?.toUpperCase()
   const projectId = normalized.match(/PRJ-\d+/i)?.[0]?.toUpperCase()
-  const targetId = emergencyId || projectId
 
   const isUpdateIntent = /\b(set|change|mark|make|move|switch|update)\b/.test(text)
-  const isStatusIntent = /\b(status|stage|where|what('| i)?s|current|progress)\b/.test(text)
+  const isStatusIntent = /\b(status|stage|where|what('| i)?s|current|progress|worked on|happening|update)\b/.test(text)
 
   const commercialStatusOptions = ['Scheduled', 'In Progress', 'Awaiting Permit', 'Permit Follow-up Sent', 'Complete', 'On Hold', 'Cancelled']
   const emergencyStatusOptions = ['Awaiting crew', 'En route', 'On site', 'Parts check', 'Resolved', 'Closed']
+
+  const extractTargetValue = () => {
+    const toMatch = normalized.match(/\bto\b\s+([\w\s-]+)/i)?.[1]
+    if (toMatch) return toMatch.trim().replace(/[.?!]$/, '')
+
+    if (/\bcomplete|completed|done|finish|finished\b/i.test(normalized)) return 'Complete'
+    if (/\bin\s*progress|working\s*on|started\b/i.test(normalized)) return 'In Progress'
+    if (/\bscheduled|schedule\b/i.test(normalized)) return 'Scheduled'
+    if (/\bawaiting\s*permit|permit\b/i.test(normalized)) return 'Awaiting Permit'
+    if (/\ben\s*route|dispatched\b/i.test(normalized)) return 'En route'
+    if (/\bon\s*hold|blocked\b/i.test(normalized)) return 'On Hold'
+    return ''
+  }
+
+  const targetId = emergencyId || projectId || conversationState.value.lastProjectId
+
+  if (/^(yes|yeah|yep|sure|do it|go ahead)$/i.test(text) && conversationState.value.awaitingStageForProject && conversationState.value.lastProjectId) {
+    return `Perfect — what stage should I set for ${conversationState.value.lastProjectId}? For example: In Progress, Scheduled, Complete, or On Hold.`
+  }
 
   if (/what.*(statuses|status options|options).*(commercial|project|prj)/i.test(text)) {
     return `For commercial jobs (PRJ), you can set: ${commercialStatusOptions.join(', ')}.`
@@ -268,81 +298,73 @@ function botReply(input: string) {
     return text.includes(client) || text.includes(location)
   })
 
-  if (projectByName && /(what.*(worked on|happening|update)|status.*(for|on)|progress.*(for|on))/i.test(text)) {
+  if (projectByName && isStatusIntent) {
+    conversationState.value.lastProjectId = projectByName.id
+    conversationState.value.awaitingStageForProject = true
     return [
       `Right now for ${projectByName.client}:`,
       `${projectByName.currentWork || projectByName.scope}`,
       `Current stage is ${projectByName.stage}.`,
       `Next up: ${projectByName.nextStep || 'confirm next milestone and crew timing.'}`,
-      'Want me to set a new stage for this project now?'
+      `If you want, I can change the stage label for ${projectByName.id} right now.`
     ].join(' ')
   }
 
-  const extractTargetValue = () => {
-    const toMatch = normalized.match(/\bto\b\s+([\w\s-]+)/i)?.[1]
-    if (toMatch) return toMatch.trim().replace(/[.?!]$/, '')
-
-    if (/\bcomplete|completed|done|finish|finished\b/i.test(normalized)) return 'Complete'
-    if (/\bin\s*progress|working\s*on|started\b/i.test(normalized)) return 'In Progress'
-    if (/\bscheduled|schedule\b/i.test(normalized)) return 'Scheduled'
-    if (/\bawaiting\s*permit|permit\b/i.test(normalized)) return 'Awaiting Permit'
-    if (/\ben\s*route|dispatched\b/i.test(normalized)) return 'En route'
-    return ''
-  }
-
   if (!targetId) {
-    return 'Give me a job ID and I can handle it. Example: “make PRJ-4101 complete” or “where is EM-2042?”'
+    return 'I can help — tell me the job code (EM-xxxx or PRJ-xxxx), or a client name like “Lakewood School District”.'
   }
 
-  if (emergencyId) {
-    const job = emergencyQueue.value.find((j) => j.ticket === emergencyId)
-    if (!job) return `I couldn't find ${emergencyId}.`
+  if (/^PRJ-\d+$/i.test(targetId)) {
+    const job = installJobs.value.find((j) => j.id === targetId)
+    if (!job) return `I couldn't find ${targetId}.`
+    conversationState.value.lastProjectId = job.id
+
+    if (/\bpermit\b/.test(text) && isUpdateIntent) {
+      job.stage = 'Permit Follow-up Sent'
+      job.stageClass = 'bg-purple-100 text-purple-700'
+      pushAction(`${job.id} permit follow-up logged`)
+      conversationState.value.awaitingStageForProject = false
+      return `Done — ${job.id} is now Permit Follow-up Sent. Want me to add a note in the timeline too?`
+    }
+
+    if (isUpdateIntent || (conversationState.value.awaitingStageForProject && !!extractTargetValue())) {
+      const nextStage = extractTargetValue() || 'In Progress'
+      job.stage = nextStage
+      job.stageClass = stageClassFor(nextStage)
+      pushAction(`${job.id} stage changed to ${nextStage}`)
+      conversationState.value.awaitingStageForProject = false
+      return `Done — I changed ${job.id} to ${nextStage}.` 
+    }
+
+    if (isStatusIntent || /\?$/.test(text)) {
+      conversationState.value.awaitingStageForProject = true
+      return `${job.id} is currently ${job.stage}. Current work: ${job.currentWork || job.scope}. Want me to change the stage?`
+    }
+  }
+
+  if (/^EM-\d+$/i.test(targetId)) {
+    const job = emergencyQueue.value.find((j) => j.ticket === targetId)
+    if (!job) return `I couldn't find ${targetId}.`
 
     if (/\breassign|assign|dispatch\b/.test(text)) {
       job.status = 'En route'
-      pushAction(`${emergencyId} reassigned and status set to En route`)
-      return `Done — ${emergencyId} is now En route. I can also notify office/customer notes next if you want.`
+      pushAction(`${job.ticket} reassigned and status set to En route`)
+      return `Done — ${job.ticket} is now En route. I can also adjust ETA notes if you want.`
     }
 
     if (isUpdateIntent) {
       const nextStatus = extractTargetValue() || 'In Progress'
       job.status = nextStatus
-      pushAction(`${emergencyId} status changed to ${nextStatus}`)
-      return `Got it — I updated ${emergencyId} to ${nextStatus}. Want me to adjust ETA notes too?`
+      pushAction(`${job.ticket} status changed to ${nextStatus}`)
+      return `Got it — I updated ${job.ticket} to ${nextStatus}.`
     }
 
     if (isStatusIntent || /\?$/.test(text)) {
-      pushAction(`Status query answered for ${emergencyId}`)
-      return `${emergencyId} is currently ${job.status}. ETA target is ${job.eta} in ${job.city}. Want me to move it forward or leave as is?`
+      return `${job.ticket} is currently ${job.status}. ETA target is ${job.eta} in ${job.city}.`
     }
   }
 
-  if (projectId) {
-    const job = installJobs.value.find((j) => j.id === projectId)
-    if (!job) return `I couldn't find ${projectId}.`
-
-    if (/\bpermit\b/.test(text) && isUpdateIntent) {
-      job.stage = 'Permit Follow-up Sent'
-      job.stageClass = 'bg-purple-100 text-purple-700'
-      pushAction(`${projectId} permit follow-up logged`)
-      return `Done. ${projectId} marked Permit Follow-up Sent.`
-    }
-
-    if (isUpdateIntent) {
-      const nextStage = extractTargetValue() || 'In Progress'
-      job.stage = nextStage
-      job.stageClass = stageClassFor(nextStage)
-      pushAction(`${projectId} stage changed to ${nextStage}`)
-      return `Done — ${projectId} is now ${nextStage}. If you want, I can apply the same stage to related jobs.`
-    }
-
-    if (isStatusIntent || /\?$/.test(text)) {
-      pushAction(`Stage query answered for ${projectId}`)
-      return `${projectId} is currently ${job.stage}. Current work: ${job.currentWork || job.scope}`
-    }
-  }
-
-  return 'I can help with status lookups, project updates, and quick docs. Try: “what is being worked on for Lakewood School District?” or “set PRJ-4101 to complete”.'
+  return 'I can answer project updates by client name and also change stages/statuses. Try “what is being worked on for Lakewood School District?” then “set it to In Progress”.'
 }
 
 async function sendChat() {

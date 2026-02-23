@@ -7,7 +7,12 @@
     "stage": "In Progress",
     "stageClass": "bg-blue-100 text-blue-700",
     "currentWork": "Crews are replacing rooftop units and calibrating control panels.",
-    "nextStep": "Run integration tests with building automation and close out QA notes."
+    "nextStep": "Run integration tests with building automation and close out QA notes.",
+    "notes": [
+      "Site walk completed with facilities lead.",
+      "Panel retrofit is 70% complete.",
+      "Controls calibration in progress on zone B."
+    ]
   },
   {
     "id": "PRJ-4102",
@@ -17,7 +22,12 @@
     "stage": "Awaiting Permit",
     "stageClass": "bg-amber-100 text-amber-700",
     "currentWork": "Engineering package is complete and permit packet is queued with the city.",
-    "nextStep": "Permit follow-up call + lock install window once approved."
+    "nextStep": "Permit follow-up call + lock install window once approved.",
+    "notes": [
+      "Stamped drawings submitted to city portal.",
+      "Waiting on permit reviewer assignment.",
+      "Crew schedule tentatively blocked for next week."
+    ]
   },
   {
     "id": "PRJ-4103",
@@ -27,6 +37,11 @@
     "stage": "Scheduled",
     "stageClass": "bg-emerald-100 text-emerald-700",
     "currentWork": "Controls team is preparing panel maps and pre-config templates for commissioning.",
-    "nextStep": "Begin onsite cutover during scheduled maintenance window and run functional tests."
+    "nextStep": "Begin onsite cutover during scheduled maintenance window and run functional tests.",
+    "notes": [
+      "Pre-commissioning templates drafted.",
+      "Panel mapping review with district IT scheduled for Wednesday.",
+      "Maintenance window confirmed for weekend cutover."
+    ]
   }
 ]
