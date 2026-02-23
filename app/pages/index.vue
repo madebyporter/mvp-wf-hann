@@ -1,8 +1,8 @@
 <template>
-  <div class="space-y-6">
-    <div class="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)_280px]">
+  <div class="parent h-full max-h-dvh flex flex-col min-h-0 overflow-hidden">
+    <div class="main flex-1 min-h-0 grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)_280px] overflow-hidden">
       <!-- AI chat rail (mocked but action-oriented) -->
-      <aside class="space-y-4">
+      <aside class="chat-window h-full min-h-0 overflow-y-auto pr-1 space-y-4">
         <div class="rounded-xl border p-4 bg-slate-50">
           <p class="text-xs uppercase tracking-wide text-slate-500">AI Dispatch Copilot</p>
           <p class="mt-1 text-sm text-slate-700">Answers status questions + applies quick workflow updates</p>
@@ -29,7 +29,7 @@
       </aside>
 
       <!-- Main ops center -->
-      <section class="space-y-4">
+      <section class="jobqueue h-full min-h-0 overflow-y-auto pr-1 space-y-4">
         <div class="rounded-xl border p-5">
           <div class="flex items-center justify-between gap-3">
             <h2 class="font-semibold">Emergency Queue (24/7)</h2>
@@ -86,7 +86,7 @@
       </section>
 
       <!-- Right stat rail -->
-      <aside class="space-y-4">
+      <aside class="analytics h-full min-h-0 overflow-y-auto pr-1 space-y-4">
         <div class="rounded-xl border p-5">
           <h2 class="font-semibold">Home Service Plans</h2>
           <ul class="mt-3 space-y-2 text-sm">
@@ -113,18 +113,18 @@
     </div>
 
     <!-- AI input strip (mocked) -->
-    <div class="border-t pt-4 space-y-3">
-      <div class="rounded-xl border bg-slate-100 px-4 py-3 flex items-center justify-between">
+    <footer class="footer border-t pt-3 space-y-3 shrink-0 bg-white">
+      <div class="chat-input rounded-xl border bg-slate-100 px-4 py-3 flex items-center justify-between">
         <span class="text-slate-700 font-medium">AI Chat input</span>
         <button class="rounded-full bg-slate-900 text-white px-3 py-1.5 text-sm">➤</button>
       </div>
 
-      <div class="flex flex-wrap gap-2">
+      <div class="flex flex-wrap gap-2 pb-1">
         <button class="text-xs rounded-lg border px-3 py-2 hover:bg-slate-50" @click="runDemo('status')">Ask: "Status of EM-2042?"</button>
         <button class="text-xs rounded-lg border px-3 py-2 hover:bg-slate-50" @click="runDemo('reroute')">Action: Reassign EM-2042 to Crew A2</button>
         <button class="text-xs rounded-lg border px-3 py-2 hover:bg-slate-50" @click="runDemo('permit')">Action: Mark PRJ-4102 permit follow-up sent</button>
       </div>
-    </div>
+    </footer>
   </div>
 </template>
 
