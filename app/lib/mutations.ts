@@ -161,6 +161,7 @@ export type UpdateDealArgs = {
   servicePlanTier?: ServicePlanTier
   renewalDueInDays?: number
   source?: string
+  notes?: string[]
 }
 
 export function updateDeal(
@@ -181,6 +182,7 @@ export function updateDeal(
     servicePlanTier: SERVICE_TIERS.includes(servicePlanTier) ? servicePlanTier : existing.servicePlanTier,
     renewalDueInDays: args.renewalDueInDays !== undefined ? args.renewalDueInDays : existing.renewalDueInDays,
     source: args.source !== undefined ? args.source : existing.source,
+    notes: args.notes !== undefined ? args.notes : existing.notes,
     updatedDate: dateStr
   }
   const deals = state.deals.map((d, i) => (i === idx ? updated : d))
@@ -237,6 +239,7 @@ export function updateProjectJob(
     stage?: string
     currentWork?: string
     nextStep?: string
+    notes?: string[]
   }
 ): { state: DemoState; systemMessages: string[] } {
   const list = state.jobs.install
@@ -254,11 +257,47 @@ export function updateProjectJob(
     stage: args.stage !== undefined ? stage : job.stage,
     stageClass: args.stage !== undefined ? projectStageClass(stage) : job.stageClass,
     currentWork: args.currentWork !== undefined ? args.currentWork : job.currentWork,
-    nextStep: args.nextStep !== undefined ? args.nextStep : job.nextStep
+    nextStep: args.nextStep !== undefined ? args.nextStep : job.nextStep,
+    notes: args.notes !== undefined ? args.notes : job.notes
   }
   const install = list.map((j, i) => (i === idx ? updated : j))
   const next: DemoState = { ...state, jobs: { ...state.jobs, install } }
   return { state: next, systemMessages: [`Updated project ${args.jobId}.`] }
+}
+
+export function deleteDeal(
+  state: DemoState,
+  args: { dealId: string }
+): { state: DemoState; systemMessages: string[] } {
+  const idx = state.deals.findIndex((d) => d.id === args.dealId)
+  if (idx < 0) return { state, systemMessages: [`Deal ${args.dealId} not found.`] }
+  const deals = state.deals.filter((_, i) => i !== idx)
+  const next = recomputeQuoteConversion({ ...state, deals })
+  return { state: next, systemMessages: [`Deleted deal ${args.dealId}.`] }
+}
+
+export function deleteEmergencyJob(
+  state: DemoState,
+  args: { jobId: string }
+): { state: DemoState; systemMessages: string[] } {
+  const list = state.jobs.emergency
+  const idx = list.findIndex((j) => j.ticket === args.jobId)
+  if (idx < 0) return { state, systemMessages: [`Emergency job ${args.jobId} not found.`] }
+  const emergency = list.filter((_, i) => i !== idx)
+  const next: DemoState = { ...state, jobs: { ...state.jobs, emergency } }
+  return { state: next, systemMessages: [`Deleted emergency ${args.jobId}.`] }
+}
+
+export function deleteProjectJob(
+  state: DemoState,
+  args: { jobId: string }
+): { state: DemoState; systemMessages: string[] } {
+  const list = state.jobs.install
+  const idx = list.findIndex((j) => j.id === args.jobId)
+  if (idx < 0) return { state, systemMessages: [`Project job ${args.jobId} not found.`] }
+  const install = list.filter((_, i) => i !== idx)
+  const next: DemoState = { ...state, jobs: { ...state.jobs, install } }
+  return { state: next, systemMessages: [`Deleted project ${args.jobId}.`] }
 }
 
 export function convertDealToJob(

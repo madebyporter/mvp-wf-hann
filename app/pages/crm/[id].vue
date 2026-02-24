@@ -58,6 +58,15 @@
         <div><p class="text-slate-500">Value</p><p class="font-medium">${{ (deal.dealAmount ?? 0).toLocaleString() }}</p></div>
         <div><p class="text-slate-500">Service plan</p><p class="font-medium">{{ deal.servicePlanTier }}</p></div>
         <div v-if="deal.renewalDueInDays != null"><p class="text-slate-500">Renewal due</p><p class="font-medium">{{ deal.renewalDueInDays }} days</p></div>
+        <div v-if="deal.notes?.length" class="md:col-span-2">
+          <p class="text-slate-500 mb-1">Opportunity notes</p>
+          <ul class="space-y-1 text-slate-700">
+            <li v-for="(note, idx) in deal.notes" :key="idx" class="flex gap-2">
+              <span class="text-slate-400">•</span>
+              <span>{{ note }}</span>
+            </li>
+          </ul>
+        </div>
       </div>
 
       <form v-else class="mt-4 grid gap-4 md:grid-cols-2 text-sm" @submit.prevent="saveDeal">
@@ -90,14 +99,38 @@
           <label class="block text-slate-500 mb-1">Source</label>
           <input v-model="form.source" type="text" placeholder="—" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" />
         </div>
+        <div class="md:col-span-2">
+          <label class="block text-slate-500 mb-1">Opportunity notes</label>
+          <ul v-if="form.notes.length" class="mb-2 space-y-1 text-sm text-slate-700">
+            <li v-for="(note, idx) in form.notes" :key="idx" class="flex items-center gap-2">
+              <span class="text-slate-400">•</span>
+              <span class="flex-1 min-w-0">{{ note }}</span>
+              <button type="button" class="text-slate-400 hover:text-rose-600 shrink-0" @click="removeNote(idx)">Remove</button>
+            </li>
+          </ul>
+          <div class="flex gap-2">
+            <input
+              v-model="newNote"
+              type="text"
+              class="flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm"
+              placeholder="Add a note..."
+              @keydown.enter.prevent="addNote"
+            />
+            <button type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50" @click="addNote">
+              Add note
+            </button>
+          </div>
+        </div>
+        <div class="md:col-span-2 flex justify-end pt-2">
+          <button
+            type="button"
+            class="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-50"
+            @click="confirmDeleteDeal"
+          >
+            Delete
+          </button>
+        </div>
       </form>
-    </div>
-
-    <div v-if="deal?.notes?.length" class="rounded-xl border p-5">
-      <h3 class="font-semibold">Opportunity timeline</h3>
-      <ul class="mt-3 space-y-2 text-sm text-slate-700">
-        <li v-for="(note, idx) in deal.notes" :key="idx" class="flex gap-2"><span class="text-slate-400">•</span><span>{{ note }}</span></li>
-      </ul>
     </div>
 
     <p v-else-if="!deal" class="text-slate-500">Opportunity not found.</p>
@@ -108,7 +141,8 @@
 import type { DealStage, ServicePlanTier } from '~/types/demo'
 
 const route = useRoute()
-const { state, convertDealToJobMutation, updateDealMutation } = useDemoState()
+const router = useRouter()
+const { state, convertDealToJobMutation, updateDealMutation, deleteDealMutation } = useDemoState()
 const { showToast } = useToast()
 const id = String(route.params.id)
 
@@ -116,6 +150,7 @@ const dealStages: DealStage[] = ['Lead', 'Proposal Sent', 'Won', 'Lost']
 const serviceTiers: ServicePlanTier[] = ['None', 'Basic', 'Gold', 'Platinum']
 
 const editing = ref(false)
+const newNote = ref('')
 const form = ref<{
   dealTitle: string
   dealAmount: number | undefined
@@ -123,13 +158,15 @@ const form = ref<{
   servicePlanTier: ServicePlanTier
   renewalDueInDays: number | undefined
   source: string
+  notes: string[]
 }>({
   dealTitle: '',
   dealAmount: undefined,
   dealStage: 'Lead',
   servicePlanTier: 'None',
   renewalDueInDays: undefined,
-  source: ''
+  source: '',
+  notes: []
 })
 
 const deal = computed(() => state.value.deals.find((d) => d.id === id) ?? null)
@@ -156,9 +193,22 @@ function startEdit() {
     dealStage: d.dealStage,
     servicePlanTier: d.servicePlanTier,
     renewalDueInDays: d.renewalDueInDays,
-    source: d.source ?? ''
+    source: d.source ?? '',
+    notes: [...(d.notes ?? [])]
   }
+  newNote.value = ''
   editing.value = true
+}
+
+function addNote() {
+  const t = newNote.value?.trim()
+  if (!t) return
+  form.value.notes = [...form.value.notes, t]
+  newNote.value = ''
+}
+
+function removeNote(idx: number) {
+  form.value.notes = form.value.notes.filter((_, i) => i !== idx)
 }
 
 function cancelEdit() {
@@ -176,7 +226,8 @@ function saveDeal() {
       dealStage: form.value.dealStage,
       servicePlanTier: form.value.servicePlanTier,
       renewalDueInDays: form.value.renewalDueInDays ?? undefined,
-      source: form.value.source.trim() || undefined
+      source: form.value.source.trim() || undefined,
+      notes: form.value.notes
     },
     { showToast }
   )
@@ -186,5 +237,13 @@ function saveDeal() {
 function convertToJob() {
   if (!deal.value) return
   convertDealToJobMutation({ dealId: deal.value.id }, { showToast })
+}
+
+function confirmDeleteDeal() {
+  const d = deal.value
+  if (!d) return
+  if (!confirm(`Delete deal ${d.id}? This cannot be undone.`)) return
+  deleteDealMutation({ dealId: d.id }, { showToast })
+  router.push('/crm')
 }
 </script>

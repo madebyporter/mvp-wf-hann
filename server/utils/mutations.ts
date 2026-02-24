@@ -137,6 +137,7 @@ export type UpdateDealArgs = {
   servicePlanTier?: ServicePlanTier
   renewalDueInDays?: number
   source?: string
+  notes?: string[]
 }
 
 export function updateDeal(
@@ -157,6 +158,7 @@ export function updateDeal(
     servicePlanTier: SERVICE_TIERS.includes(servicePlanTier) ? servicePlanTier : existing.servicePlanTier,
     renewalDueInDays: args.renewalDueInDays !== undefined ? args.renewalDueInDays : existing.renewalDueInDays,
     source: args.source !== undefined ? args.source : existing.source,
+    notes: args.notes !== undefined ? args.notes : existing.notes,
     updatedDate: dateStr
   }
   const deals = state.deals.map((d, i) => (i === idx ? updated : d))
@@ -210,6 +212,7 @@ export function updateProjectJob(
     stage?: string
     currentWork?: string
     nextStep?: string
+    notes?: string[]
   }
 ): { state: DemoState; systemMessages: string[] } {
   const list = state.jobs.install
@@ -227,7 +230,8 @@ export function updateProjectJob(
     stage: args.stage !== undefined ? stage : job.stage,
     stageClass: args.stage !== undefined ? projectStageClass(stage) : job.stageClass,
     currentWork: args.currentWork !== undefined ? args.currentWork : job.currentWork,
-    nextStep: args.nextStep !== undefined ? args.nextStep : job.nextStep
+    nextStep: args.nextStep !== undefined ? args.nextStep : job.nextStep,
+    notes: args.notes !== undefined ? args.notes : job.notes
   }
   const install = list.map((j, i) => (i === idx ? updated : j))
   const next: DemoState = { ...state, jobs: { ...state.jobs, install } }

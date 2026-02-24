@@ -40,6 +40,15 @@
         <div><p class="text-slate-500">Scope</p><p class="font-medium">{{ project.scope }}</p></div>
         <div v-if="project.currentWork"><p class="text-slate-500">Current work</p><p class="font-medium">{{ project.currentWork }}</p></div>
         <div v-if="project.nextStep"><p class="text-slate-500">Next step</p><p class="font-medium">{{ project.nextStep }}</p></div>
+        <div v-if="project.notes?.length" class="md:col-span-2">
+          <p class="text-slate-500 mb-1">Project notes</p>
+          <ul class="space-y-1 text-slate-700">
+            <li v-for="(note, idx) in project.notes" :key="idx" class="flex gap-2">
+              <span class="text-slate-400">•</span>
+              <span>{{ note }}</span>
+            </li>
+          </ul>
+        </div>
       </div>
 
       <form v-else class="mt-4 grid gap-4 md:grid-cols-2 text-sm" @submit.prevent="saveJob">
@@ -69,17 +78,38 @@
           <label class="block text-slate-500 mb-1">Next step</label>
           <input v-model="form.nextStep" type="text" placeholder="—" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" />
         </div>
+        <div class="md:col-span-2">
+          <label class="block text-slate-500 mb-1">Project notes</label>
+          <ul v-if="form.notes.length" class="mb-2 space-y-1 text-sm text-slate-700">
+            <li v-for="(note, idx) in form.notes" :key="idx" class="flex items-center gap-2">
+              <span class="text-slate-400">•</span>
+              <span class="flex-1 min-w-0">{{ note }}</span>
+              <button type="button" class="text-slate-400 hover:text-rose-600 shrink-0" @click="removeNote(idx)">Remove</button>
+            </li>
+          </ul>
+          <div class="flex gap-2">
+            <input
+              v-model="newNote"
+              type="text"
+              class="flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm"
+              placeholder="Add a note..."
+              @keydown.enter.prevent="addNote"
+            />
+            <button type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50" @click="addNote">
+              Add note
+            </button>
+          </div>
+        </div>
+        <div class="md:col-span-2 flex justify-end pt-2">
+          <button
+            type="button"
+            class="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-50"
+            @click="confirmDeleteProject"
+          >
+            Delete
+          </button>
+        </div>
       </form>
-    </div>
-
-    <div v-if="project?.notes?.length" class="rounded-xl border p-5">
-      <h3 class="font-semibold">Project notes</h3>
-      <ul class="mt-3 space-y-2 text-sm text-slate-700">
-        <li v-for="(note, idx) in project.notes" :key="idx" class="flex gap-2">
-          <span class="text-slate-400">•</span>
-          <span>{{ note }}</span>
-        </li>
-      </ul>
     </div>
 
     <p v-else-if="!project" class="text-slate-500">Project not found.</p>
@@ -88,7 +118,8 @@
 
 <script setup lang="ts">
 const route = useRoute()
-const { state, updateProjectJobMutation } = useDemoState()
+const router = useRouter()
+const { state, updateProjectJobMutation, deleteProjectJobMutation } = useDemoState()
 const { showToast } = useToast()
 
 const projectStages = [
@@ -106,13 +137,15 @@ const id = String(route.params.id)
 const project = computed(() => state.value.jobs.install.find((j) => j.id === id) ?? null)
 
 const editing = ref(false)
+const newNote = ref('')
 const form = ref({
   client: '',
   scope: '',
   location: '',
   stage: 'Planned',
   currentWork: '',
-  nextStep: ''
+  nextStep: '',
+  notes: [] as string[]
 })
 
 function startEdit() {
@@ -124,9 +157,22 @@ function startEdit() {
     location: p.location,
     stage: p.stage,
     currentWork: p.currentWork ?? '',
-    nextStep: p.nextStep ?? ''
+    nextStep: p.nextStep ?? '',
+    notes: [...(p.notes ?? [])]
   }
+  newNote.value = ''
   editing.value = true
+}
+
+function addNote() {
+  const t = newNote.value?.trim()
+  if (!t) return
+  form.value.notes = [...form.value.notes, t]
+  newNote.value = ''
+}
+
+function removeNote(idx: number) {
+  form.value.notes = form.value.notes.filter((_, i) => i !== idx)
 }
 
 function cancelEdit() {
@@ -144,10 +190,19 @@ function saveJob() {
       location: form.value.location,
       stage: form.value.stage,
       currentWork: form.value.currentWork || undefined,
-      nextStep: form.value.nextStep || undefined
+      nextStep: form.value.nextStep || undefined,
+      notes: form.value.notes
     },
     { showToast }
   )
   editing.value = false
+}
+
+function confirmDeleteProject() {
+  const p = project.value
+  if (!p) return
+  if (!confirm(`Delete project ${p.id}? This cannot be undone.`)) return
+  deleteProjectJobMutation({ jobId: p.id }, { showToast })
+  router.push('/jobs')
 }
 </script>

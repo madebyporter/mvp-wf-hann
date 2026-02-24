@@ -7,6 +7,9 @@ import {
   createDeal,
   createEmergencyJob,
   createProjectJob,
+  deleteDeal,
+  deleteEmergencyJob,
+  deleteProjectJob,
   dispatchEmergencyJob,
   queueNotification,
   recomputeQuoteConversion,
@@ -185,6 +188,7 @@ export function useDemoState() {
       stage?: string
       currentWork?: string
       nextStep?: string
+      notes?: string[]
     },
     options?: { showToast?: (msg: string) => void }
   ) {
@@ -202,6 +206,45 @@ export function useDemoState() {
     options?: { showToast?: (msg: string) => void }
   ) {
     const { state: next, systemMessages } = convertDealToJob(state.value, args)
+    state.value = appendSystemMessages(next, systemMessages)
+    persist()
+    if (options?.showToast && systemMessages.length) {
+      systemMessages.forEach((m) => options.showToast!(m))
+    }
+    return { systemMessages }
+  }
+
+  function deleteDealMutation(
+    args: { dealId: string },
+    options?: { showToast?: (msg: string) => void }
+  ) {
+    const { state: next, systemMessages } = deleteDeal(state.value, args)
+    state.value = appendSystemMessages(next, systemMessages)
+    persist()
+    if (options?.showToast && systemMessages.length) {
+      systemMessages.forEach((m) => options.showToast!(m))
+    }
+    return { systemMessages }
+  }
+
+  function deleteEmergencyJobMutation(
+    args: { jobId: string },
+    options?: { showToast?: (msg: string) => void }
+  ) {
+    const { state: next, systemMessages } = deleteEmergencyJob(state.value, args)
+    state.value = appendSystemMessages(next, systemMessages)
+    persist()
+    if (options?.showToast && systemMessages.length) {
+      systemMessages.forEach((m) => options.showToast!(m))
+    }
+    return { systemMessages }
+  }
+
+  function deleteProjectJobMutation(
+    args: { jobId: string },
+    options?: { showToast?: (msg: string) => void }
+  ) {
+    const { state: next, systemMessages } = deleteProjectJob(state.value, args)
     state.value = appendSystemMessages(next, systemMessages)
     persist()
     if (options?.showToast && systemMessages.length) {
@@ -230,6 +273,9 @@ export function useDemoState() {
     updateEmergencyJobMutation,
     updateProjectJobMutation,
     convertDealToJobMutation,
+    deleteDealMutation,
+    deleteEmergencyJobMutation,
+    deleteProjectJobMutation,
     dispatchEmergencyMutation,
     appendSystemMessagesOnly,
     setStateFromServer,

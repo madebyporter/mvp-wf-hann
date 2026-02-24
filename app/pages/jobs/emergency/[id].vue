@@ -104,6 +104,15 @@
             </button>
           </div>
         </div>
+        <div class="md:col-span-2 flex justify-end pt-2">
+          <button
+            type="button"
+            class="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-50"
+            @click="confirmDeleteEmergency"
+          >
+            Delete
+          </button>
+        </div>
       </form>
     </div>
 
@@ -122,7 +131,8 @@
 
 <script setup lang="ts">
 const route = useRoute()
-const { state, updateEmergencyJobMutation } = useDemoState()
+const router = useRouter()
+const { state, updateEmergencyJobMutation, deleteEmergencyJobMutation } = useDemoState()
 const { showToast } = useToast()
 
 const emergencyStatuses = ['Awaiting crew', 'En route', 'On site', 'Completed']
@@ -188,5 +198,13 @@ function saveJob() {
     { showToast }
   )
   editing.value = false
+}
+
+function confirmDeleteEmergency() {
+  const j = job.value
+  if (!j) return
+  if (!confirm(`Delete emergency ${j.ticket}? This cannot be undone.`)) return
+  deleteEmergencyJobMutation({ jobId: j.ticket }, { showToast })
+  router.push('/jobs')
 }
 </script>

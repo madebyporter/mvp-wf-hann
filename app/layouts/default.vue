@@ -10,23 +10,24 @@
           v-for="(msg, i) in chatMessages"
           :key="i"
           class="flex"
-          :class="
+          :class="[
             msg.role === 'human'
               ? 'justify-start'
               : msg.role === 'system'
-                ? 'justify-center'
-                : 'justify-end'
-          "
+                ? 'justify-center w-full'
+                : 'justify-end',
+          ]"
         >
           <div
-            class="max-w-[85%] rounded-xl px-4 py-3 text-sm border"
-            :class="
+            class="rounded-xl px-4 py-3 text-sm border"
+            :class="[
+              msg.role === 'system' ? 'w-full' : 'max-w-[85%]',
               msg.role === 'human'
                 ? 'bg-white border-slate-300 text-slate-800'
                 : msg.role === 'system'
                   ? 'bg-amber-50 border-amber-200 text-amber-900 text-xs'
                   : 'bg-slate-100 border-slate-200 text-slate-700'
-           "
+            ]"
           >
             <p
               class="text-[11px] uppercase tracking-wide mb-1"
