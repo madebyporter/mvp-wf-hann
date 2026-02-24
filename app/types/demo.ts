@@ -24,6 +24,8 @@ export type Deal = {
   updatedDate: string
   source?: string
   notes?: string[]
+  /** Set when deal is converted to a job (Won → job). */
+  projectJobId?: string
 }
 
 export type EmergencyStatus = 'Awaiting crew' | 'En route' | 'On site' | 'Completed'

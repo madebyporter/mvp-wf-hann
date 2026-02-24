@@ -22,6 +22,7 @@ export type Deal = {
   updatedDate: string
   source?: string
   notes?: string[]
+  projectJobId?: string
 }
 
 export type EmergencyJob = {

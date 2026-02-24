@@ -1,11 +1,13 @@
 import type { DemoState } from '../utils/demo-types'
 import {
   appendSystemMessages,
+  convertDealToJob,
   createDeal,
   createEmergencyJob,
   createProjectJob,
   dispatchEmergencyJob,
-  recomputeQuoteConversion
+  recomputeQuoteConversion,
+  updateDealStage
 } from '../utils/mutations'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
@@ -88,12 +90,41 @@ const TOOLS = [
   {
     type: 'function' as const,
     function: {
-      name: 'find_entities',
-      description: 'Resolve crew names/ids or job ids from the current state. Returns list of matching crews or emergency jobs.',
+      name: 'update_deal',
+      description: 'Update an existing deal, e.g. set its stage to Won, Lost, Proposal Sent, or Lead. Use when the user says to change a deal status (e.g. "change East Cleveland deal to won", "mark OPP-5030 as won"). Use find_entities with type "deals" to get deal id by client name.',
       parameters: {
         type: 'object',
         properties: {
-          type: { type: 'string', enum: ['crews', 'emergency_jobs'] },
+          dealId: { type: 'string', description: 'Deal id e.g. OPP-5030' },
+          dealStage: { type: 'string', enum: ['Lead', 'Proposal Sent', 'Won', 'Lost'] }
+        },
+        required: ['dealId', 'dealStage']
+      }
+    }
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'convert_deal_to_job',
+      description: 'Convert a won deal to a commercial/install job. Creates a new job from the deal (client, scope from deal title, location from client) and links the deal to that job. Call this when the user confirms they want to convert (e.g. after you set a deal to Won and asked "Do you want to convert this to a job?" and they said yes).',
+      parameters: {
+        type: 'object',
+        properties: {
+          dealId: { type: 'string', description: 'Deal id e.g. OPP-5030' }
+        },
+        required: ['dealId']
+      }
+    }
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'find_entities',
+      description: 'Resolve crews, emergency jobs, or CRM deals from the current state. Use type "deals" and query by client/company name to get deal ids (e.g. for update_deal or convert_deal_to_job).',
+      parameters: {
+        type: 'object',
+        properties: {
+          type: { type: 'string', enum: ['crews', 'emergency_jobs', 'deals'] },
           query: { type: 'string', description: 'Partial name or id to match' }
         },
         required: ['type', 'query']
@@ -107,7 +138,7 @@ function buildOpenAIMessages(chatMessages: { role: string; text: string }[]) {
     {
       role: 'system',
       content:
-        'You are an HVAC Ops Dispatch assistant. You can: create CRM deals (create_deal), create new emergency jobs (create_emergency: issue, city, priority), create new commercial/install jobs (create_job: client, scope, location, stage), and dispatch existing emergency jobs (dispatch_emergency). Use find_entities to resolve crew or job ids when needed. Be concise. After performing an action, summarize what you did for the user.'
+        'You are an HVAC Ops Dispatch assistant. You can: create CRM deals (create_deal), update a deal stage (update_deal: dealId, dealStage), convert a won deal to a job (convert_deal_to_job: dealId), create new emergency jobs (create_emergency), create new commercial/install jobs (create_job), and dispatch existing emergency jobs (dispatch_emergency). Use find_entities with type "deals" and a client name to get deal ids. When the user asks to set a deal to Won (e.g. "change East Cleveland deal to won"), call update_deal, then in your reply ask: "Do you want to convert this to a job?" If they say yes, call convert_deal_to_job with that deal id. Be concise.'
     }
   ]
   for (const m of chatMessages) {
@@ -238,8 +269,53 @@ export default defineEventHandler(async (event) => {
               (j) => j.ticket.toLowerCase().includes(q) || j.issue?.toLowerCase().includes(q)
             )
             result = JSON.stringify(jobs.map((j) => ({ ticket: j.ticket, issue: j.issue, status: j.status })))
+          } else if (type === 'deals') {
+            const deals = state.deals.filter((d) => {
+              const clientName = state.clients.find((c) => c.id === d.clientId)?.name?.toLowerCase() ?? ''
+              return (
+                d.id.toLowerCase().includes(q) ||
+                d.dealTitle?.toLowerCase().includes(q) ||
+                clientName.includes(q)
+              )
+            })
+            result = JSON.stringify(
+              deals.map((d) => ({
+                id: d.id,
+                dealTitle: d.dealTitle,
+                dealStage: d.dealStage,
+                clientId: d.clientId
+              }))
+            )
           } else {
             result = JSON.stringify({ error: 'Unknown type' })
+          }
+        } else if (name === 'update_deal') {
+          const { dealId, dealStage } = args
+          if (!dealId || !dealStage) {
+            result = JSON.stringify({ error: 'dealId and dealStage required' })
+          } else {
+            const validStage = ['Lead', 'Proposal Sent', 'Won', 'Lost'].includes(dealStage) ? dealStage : null
+            if (!validStage) {
+              result = JSON.stringify({ error: 'dealStage must be Lead, Proposal Sent, Won, or Lost' })
+            } else {
+              const { state: next, systemMessages: msgs } = updateDealStage(state, {
+                dealId: String(dealId),
+                dealStage: validStage
+              })
+              state = next
+              systemMessages.push(...msgs)
+              result = JSON.stringify({ ok: true, messages: msgs })
+            }
+          }
+        } else if (name === 'convert_deal_to_job') {
+          const { dealId } = args
+          if (!dealId) {
+            result = JSON.stringify({ error: 'dealId required' })
+          } else {
+            const { state: next, systemMessages: msgs } = convertDealToJob(state, { dealId: String(dealId) })
+            state = next
+            systemMessages.push(...msgs)
+            result = JSON.stringify({ ok: true, messages: msgs })
           }
         } else if (name === 'create_deal') {
           const {

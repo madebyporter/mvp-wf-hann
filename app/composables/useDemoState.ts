@@ -1,13 +1,19 @@
 import type { DealStage, DemoState, ServicePlanTier } from '~/types/demo'
 import demoStateSeed from '~/data/demoStateSeed.json'
+import type { UpdateDealArgs } from '~/lib/mutations'
 import {
   appendSystemMessages,
+  convertDealToJob,
   createDeal,
   createEmergencyJob,
   createProjectJob,
   dispatchEmergencyJob,
   queueNotification,
   recomputeQuoteConversion,
+  updateDeal,
+  updateDealStage,
+  updateEmergencyJob,
+  updateProjectJob,
   upsertClient
 } from '~/lib/mutations'
 
@@ -122,6 +128,87 @@ export function useDemoState() {
     return { systemMessages }
   }
 
+  function updateDealStageMutation(
+    args: { dealId: string; dealStage: DealStage },
+    options?: { showToast?: (msg: string) => void }
+  ) {
+    const { state: next, systemMessages } = updateDealStage(state.value, args)
+    state.value = appendSystemMessages(next, systemMessages)
+    persist()
+    if (options?.showToast && systemMessages.length) {
+      systemMessages.forEach((m) => options.showToast!(m))
+    }
+    return { systemMessages }
+  }
+
+  function updateDealMutation(
+    args: UpdateDealArgs,
+    options?: { showToast?: (msg: string) => void }
+  ) {
+    const { state: next, systemMessages } = updateDeal(state.value, args)
+    state.value = appendSystemMessages(next, systemMessages)
+    persist()
+    if (options?.showToast && systemMessages.length) {
+      systemMessages.forEach((m) => options.showToast!(m))
+    }
+    return { systemMessages }
+  }
+
+  function updateEmergencyJobMutation(
+    args: {
+      jobId: string
+      issue?: string
+      city?: string
+      priority?: string
+      status?: string
+      crewId?: string
+      eta?: string
+    },
+    options?: { showToast?: (msg: string) => void }
+  ) {
+    const { state: next, systemMessages } = updateEmergencyJob(state.value, args)
+    state.value = appendSystemMessages(next, systemMessages)
+    persist()
+    if (options?.showToast && systemMessages.length) {
+      systemMessages.forEach((m) => options.showToast!(m))
+    }
+    return { systemMessages }
+  }
+
+  function updateProjectJobMutation(
+    args: {
+      jobId: string
+      client?: string
+      scope?: string
+      location?: string
+      stage?: string
+      currentWork?: string
+      nextStep?: string
+    },
+    options?: { showToast?: (msg: string) => void }
+  ) {
+    const { state: next, systemMessages } = updateProjectJob(state.value, args)
+    state.value = appendSystemMessages(next, systemMessages)
+    persist()
+    if (options?.showToast && systemMessages.length) {
+      systemMessages.forEach((m) => options.showToast!(m))
+    }
+    return { systemMessages }
+  }
+
+  function convertDealToJobMutation(
+    args: { dealId: string },
+    options?: { showToast?: (msg: string) => void }
+  ) {
+    const { state: next, systemMessages } = convertDealToJob(state.value, args)
+    state.value = appendSystemMessages(next, systemMessages)
+    persist()
+    if (options?.showToast && systemMessages.length) {
+      systemMessages.forEach((m) => options.showToast!(m))
+    }
+    return { systemMessages }
+  }
+
   function appendSystemMessagesOnly(messages: string[], showToast?: (msg: string) => void) {
     applySystemMessages(messages, showToast)
   }
@@ -137,6 +224,11 @@ export function useDemoState() {
     createDealMutation,
     createEmergencyJobMutation,
     createProjectJobMutation,
+    updateDealStageMutation,
+    updateDealMutation,
+    updateEmergencyJobMutation,
+    updateProjectJobMutation,
+    convertDealToJobMutation,
     dispatchEmergencyMutation,
     appendSystemMessagesOnly,
     setStateFromServer,

@@ -112,6 +112,150 @@ export function createProjectJob(
   }
 }
 
+export function updateDealStage(
+  state: DemoState,
+  args: { dealId: string; dealStage: DealStage }
+): { state: DemoState; systemMessages: string[] } {
+  const idx = state.deals.findIndex((d) => d.id === args.dealId)
+  if (idx < 0) return { state, systemMessages: [`Deal ${args.dealId} not found.`] }
+  const dateStr = new Date().toISOString().slice(0, 10)
+  const deals = state.deals.map((d, i) =>
+    i === idx ? { ...d, dealStage: args.dealStage, updatedDate: dateStr } : d
+  )
+  const next = recomputeQuoteConversion({ ...state, deals })
+  return { state: next, systemMessages: [`Updated ${args.dealId} to ${args.dealStage}.`] }
+}
+
+export type UpdateDealArgs = {
+  dealId: string
+  dealTitle?: string
+  dealAmount?: number
+  dealStage?: DealStage
+  servicePlanTier?: ServicePlanTier
+  renewalDueInDays?: number
+  source?: string
+}
+
+export function updateDeal(
+  state: DemoState,
+  args: UpdateDealArgs
+): { state: DemoState; systemMessages: string[] } {
+  const idx = state.deals.findIndex((d) => d.id === args.dealId)
+  if (idx < 0) return { state, systemMessages: [`Deal ${args.dealId} not found.`] }
+  const dateStr = new Date().toISOString().slice(0, 10)
+  const existing = state.deals[idx]
+  const dealStage = args.dealStage ?? existing.dealStage
+  const servicePlanTier = args.servicePlanTier ?? existing.servicePlanTier
+  const updated: Deal = {
+    ...existing,
+    dealTitle: args.dealTitle !== undefined ? args.dealTitle : existing.dealTitle,
+    dealAmount: args.dealAmount !== undefined ? args.dealAmount : existing.dealAmount,
+    dealStage: DEAL_STAGES.includes(dealStage) ? dealStage : existing.dealStage,
+    servicePlanTier: SERVICE_TIERS.includes(servicePlanTier) ? servicePlanTier : existing.servicePlanTier,
+    renewalDueInDays: args.renewalDueInDays !== undefined ? args.renewalDueInDays : existing.renewalDueInDays,
+    source: args.source !== undefined ? args.source : existing.source,
+    updatedDate: dateStr
+  }
+  const deals = state.deals.map((d, i) => (i === idx ? updated : d))
+  const next = recomputeQuoteConversion({ ...state, deals })
+  return { state: next, systemMessages: [`Updated deal ${args.dealId}.`] }
+}
+
+export function updateEmergencyJob(
+  state: DemoState,
+  args: {
+    jobId: string
+    issue?: string
+    city?: string
+    priority?: string
+    status?: string
+    crewId?: string
+    eta?: string
+  }
+): { state: DemoState; systemMessages: string[] } {
+  const list = state.jobs.emergency
+  const idx = list.findIndex((j) => j.ticket === args.jobId)
+  if (idx < 0) return { state, systemMessages: [`Emergency job ${args.jobId} not found.`] }
+  const job = list[idx]
+  const status =
+    args.status != null && args.status.trim()
+      ? (EMERGENCY_STATUSES.find((s) => s.toLowerCase() === args.status!.trim().toLowerCase()) ?? args.status.trim())
+      : job.status
+  const updated: EmergencyJob = {
+    ...job,
+    issue: args.issue !== undefined ? args.issue.trim() : job.issue,
+    city: args.city !== undefined ? args.city.trim() : job.city,
+    priority: args.priority !== undefined ? (args.priority === 'Med' ? 'Med' : 'High') : job.priority,
+    status,
+    crewId: args.crewId !== undefined ? args.crewId : job.crewId,
+    eta: args.eta !== undefined ? args.eta : job.eta
+  }
+  const emergency = list.map((j, i) => (i === idx ? updated : j))
+  const next: DemoState = { ...state, jobs: { ...state.jobs, emergency } }
+  return { state: next, systemMessages: [`Updated emergency ${args.jobId}.`] }
+}
+
+export function updateProjectJob(
+  state: DemoState,
+  args: {
+    jobId: string
+    client?: string
+    scope?: string
+    location?: string
+    stage?: string
+    currentWork?: string
+    nextStep?: string
+  }
+): { state: DemoState; systemMessages: string[] } {
+  const list = state.jobs.install
+  const idx = list.findIndex((j) => j.id === args.jobId)
+  if (idx < 0) return { state, systemMessages: [`Project job ${args.jobId} not found.`] }
+  const job = list[idx]
+  const stageVal = args.stage?.trim()
+  const stage =
+    stageVal && (PROJECT_STAGES as readonly string[]).includes(stageVal) ? stageVal : job.stage
+  const updated: ProjectJob = {
+    ...job,
+    client: args.client !== undefined ? args.client.trim() : job.client,
+    scope: args.scope !== undefined ? args.scope.trim() : job.scope,
+    location: args.location !== undefined ? args.location.trim() : job.location,
+    stage: args.stage !== undefined ? stage : job.stage,
+    stageClass: args.stage !== undefined ? projectStageClass(stage) : job.stageClass,
+    currentWork: args.currentWork !== undefined ? args.currentWork : job.currentWork,
+    nextStep: args.nextStep !== undefined ? args.nextStep : job.nextStep
+  }
+  const install = list.map((j, i) => (i === idx ? updated : j))
+  const next: DemoState = { ...state, jobs: { ...state.jobs, install } }
+  return { state: next, systemMessages: [`Updated project ${args.jobId}.`] }
+}
+
+export function convertDealToJob(
+  state: DemoState,
+  args: { dealId: string }
+): { state: DemoState; systemMessages: string[] } {
+  const deal = state.deals.find((d) => d.id === args.dealId)
+  if (!deal) return { state, systemMessages: [`Deal ${args.dealId} not found.`] }
+  if (deal.projectJobId) {
+    return { state, systemMessages: [`Deal ${args.dealId} already converted to job ${deal.projectJobId}.`] }
+  }
+  const client = state.clients.find((c) => c.id === deal.clientId)
+  const clientName = client?.name ?? deal.clientId
+  const location = (client?.address ?? '').trim() || 'TBD'
+  const { state: next, systemMessages: createMsgs } = createProjectJob(state, {
+    client: clientName,
+    scope: deal.dealTitle,
+    location,
+    stage: 'Planned'
+  })
+  const newJob = next.jobs.install[next.jobs.install.length - 1]
+  if (!newJob) return { state, systemMessages: createMsgs }
+  const deals = next.deals.map((d) => (d.id === args.dealId ? { ...d, projectJobId: newJob.id } : d))
+  return {
+    state: { ...next, deals },
+    systemMessages: [...createMsgs, `Linked deal ${args.dealId} to job ${newJob.id}.`]
+  }
+}
+
 export function upsertClient(
   state: DemoState,
   args: { clientName: string; phone?: string; email?: string; address?: string }
