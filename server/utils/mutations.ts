@@ -277,6 +277,24 @@ export function convertDealToJob(
   }
 }
 
+export function linkDealToJob(
+  state: DemoState,
+  args: { dealId: string; projectJobId: string }
+): { state: DemoState; systemMessages: string[] } {
+  const dealIdx = state.deals.findIndex((d) => d.id === args.dealId)
+  if (dealIdx < 0) return { state, systemMessages: [`Deal ${args.dealId} not found.`] }
+  const jobExists = state.jobs.install.some((j) => j.id === args.projectJobId)
+  if (!jobExists) return { state, systemMessages: [`Project job ${args.projectJobId} not found.`] }
+  const dateStr = new Date().toISOString().slice(0, 10)
+  const deals = state.deals.map((d, i) =>
+    i === dealIdx ? { ...d, projectJobId: args.projectJobId, updatedDate: dateStr } : d
+  )
+  return {
+    state: { ...state, deals },
+    systemMessages: [`Linked deal ${args.dealId} to job ${args.projectJobId}.`]
+  }
+}
+
 export function upsertClient(
   state: DemoState,
   args: { clientName: string; phone?: string; email?: string; address?: string }

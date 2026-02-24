@@ -102,8 +102,29 @@
             <span class="invisible">{{ chatInput }}</span><span>{{ suggestionTail }}</span>
           </div>
         </div>
-        <button type="button" class="text-xs rounded-md border bg-white px-2 py-1 hover:bg-slate-50 whitespace-nowrap" @click="quickAsk('Status of EM-2042')">Status EM-2042</button>
-        <button type="button" class="text-xs rounded-md border bg-white px-2 py-1 hover:bg-slate-50 whitespace-nowrap" @click="quickAsk('Dispatch EM-2042 to Crew A2, set En route, ETA 60, notify customer.')">Dispatch EM-2042</button>
+        <template v-if="helperRound === 'verbs'">
+          <button
+            v-for="v in CHAT_VERBS"
+            :key="v.key"
+            type="button"
+            class="text-xs rounded-md border bg-white px-2 py-1 hover:bg-slate-50 whitespace-nowrap"
+            @click="pickVerb(v.prefix, v.key)"
+          >
+            {{ v.label }}
+          </button>
+        </template>
+        <template v-else>
+          <button
+            v-for="n in recentNouns"
+            :key="n.code"
+            type="button"
+            class="text-xs rounded-md border bg-white px-2 py-1 hover:bg-slate-50 min-w-0 max-w-[140px] truncate"
+            :title="n.label"
+            @click="pickNoun(n.code)"
+          >
+            {{ n.label }}
+          </button>
+        </template>
         <button type="submit" class="rounded-full bg-slate-900 text-white px-3 py-1.5 text-sm">➤</button>
       </form>
     </footer>
@@ -123,6 +144,16 @@ const chatInput = ref('')
 const chatInputEl = ref<HTMLInputElement | null>(null)
 const chatWindowEl = ref<HTMLElement | null>(null)
 const isAiTyping = ref(false)
+const helperRound = ref<'verbs' | 'nouns'>('verbs')
+const selectedVerbKey = ref<string | null>(null)
+
+const CHAT_VERBS = [
+  { key: 'status', label: 'Status', prefix: 'Status of ' },
+  { key: 'dispatch', label: 'Dispatch', prefix: 'Dispatch ' },
+  { key: 'edit', label: 'Edit', prefix: 'Edit ' },
+  { key: 'createJob', label: 'Create job', prefix: 'Create job for ' },
+  { key: 'createDeal', label: 'Create deal', prefix: 'Create deal for ' }
+] as const
 
 const allCodes = computed(() => [
   ...state.value.jobs.emergency.map((j) => j.ticket),
@@ -158,6 +189,39 @@ const suggestionTail = computed(() => {
   return ''
 })
 
+const recentNouns = computed(() => {
+  const items: { label: string; code: string }[] = []
+  const deals = state.value.deals
+
+  if (selectedVerbKey.value === 'createJob') {
+    const wonDeals = deals.filter((d) => d.dealStage === 'Won' && !d.projectJobId)
+    const show = wonDeals.slice(-3)
+    for (const d of show) {
+      const short = d.dealTitle.length > 18 ? `${d.dealTitle.slice(0, 15)}…` : d.dealTitle
+      items.push({ label: `${d.id} — ${short}`, code: d.id })
+    }
+    return items
+  }
+
+  const em = state.value.jobs.emergency
+  const install = state.value.jobs.install
+  const lastEm = em[em.length - 1]
+  if (lastEm) {
+    items.push({ label: `${lastEm.ticket} — ${lastEm.issue}`, code: lastEm.ticket })
+  }
+  const lastInstall = install[install.length - 1]
+  if (lastInstall) {
+    const short = lastInstall.client.length > 18 ? `${lastInstall.client.slice(0, 15)}…` : lastInstall.client
+    items.push({ label: `${lastInstall.id} — ${short}`, code: lastInstall.id })
+  }
+  const lastDeal = deals[deals.length - 1]
+  if (lastDeal) {
+    const short = lastDeal.dealTitle.length > 18 ? `${lastDeal.dealTitle.slice(0, 15)}…` : lastDeal.dealTitle
+    items.push({ label: `${lastDeal.id} — ${short}`, code: lastDeal.id })
+  }
+  return items
+})
+
 function acceptSuggestion() {
   if (!suggestedCode.value) return
   const value = chatInput.value
@@ -176,6 +240,8 @@ async function sendChat() {
   state.value = { ...state.value, chatMessages: messages }
   persist()
   chatInput.value = ''
+  helperRound.value = 'verbs'
+  selectedVerbKey.value = null
   isAiTyping.value = true
   await scrollChatToBottom()
 
@@ -207,9 +273,20 @@ async function sendChat() {
   }
 }
 
-function quickAsk(text: string) {
-  chatInput.value = text
-  sendChat()
+function pickVerb(prefix: string, key: string) {
+  chatInput.value = prefix
+  selectedVerbKey.value = key
+  helperRound.value = 'nouns'
+  nextTick(() => chatInputEl.value?.focus())
+}
+
+function pickNoun(code: string) {
+  const cur = chatInput.value
+  const needsSpace = cur.length > 0 && !cur.endsWith(' ')
+  chatInput.value = cur + (needsSpace ? ' ' : '') + code
+  helperRound.value = 'verbs'
+  selectedVerbKey.value = null
+  nextTick(() => chatInputEl.value?.focus())
 }
 
 async function scrollChatToBottom() {

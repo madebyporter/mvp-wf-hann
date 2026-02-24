@@ -7,6 +7,7 @@ import {
   createProjectJob,
   deleteProjectJob,
   dispatchEmergencyJob,
+  linkDealToJob,
   recomputeQuoteConversion,
   updateDealStage,
   updateProjectJob
@@ -142,13 +143,28 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'convert_deal_to_job',
-      description: 'Convert a won deal to a commercial/install job. Creates a new job from the deal (client, scope from deal title, location from client) and links the deal to that job. Call this when the user confirms they want to convert (e.g. after you set a deal to Won and asked "Do you want to convert this to a job?" and they said yes).',
+      description: 'Create a commercial/install job FROM a won deal and link the deal to it. Use when the user says "create job for OPP-xxx", "create a job for [deal id]", or "convert OPP-xxx to a job". Do NOT use create_job when a deal id is mentioned for job creation—use this instead so the deal is linked.',
       parameters: {
         type: 'object',
         properties: {
           dealId: { type: 'string', description: 'Deal id e.g. OPP-5030' }
         },
         required: ['dealId']
+      }
+    }
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'link_deal_to_job',
+      description: 'Link an existing deal to an existing project job (set the deal\'s project job id). Use when a job was already created for a deal but the deal was not linked, or when the user asks to link deal OPP-xxx to job PRJ-xxx.',
+      parameters: {
+        type: 'object',
+        properties: {
+          dealId: { type: 'string', description: 'Deal id e.g. OPP-5002' },
+          projectJobId: { type: 'string', description: 'Project job id e.g. PRJ-4105' }
+        },
+        required: ['dealId', 'projectJobId']
       }
     }
   },
@@ -180,7 +196,7 @@ function buildOpenAIMessages(chatMessages: { role: string; text: string }[]) {
     {
       role: 'system',
       content:
-        'You are an HVAC Ops Dispatch assistant. Use the full conversation history: the user\'s latest message often refers to the previous message (e.g. "yes", "do that", "edit that project", "delete the duplicate")—always interpret it in that context. You can: create CRM deals (create_deal), update a deal stage (update_deal), convert a won deal to a job (convert_deal_to_job), create new emergency jobs (create_emergency), create new commercial/install jobs (create_job), edit existing projects (update_project_job), delete projects (delete_project_job), and dispatch emergency jobs (dispatch_emergency). IMPORTANT: When the user asks to EDIT or UPDATE an existing project and gives a project id (e.g. PRJ-4104), use update_project_job with that jobId—do NOT use create_job. Use create_job only for creating a brand NEW project. When the user asks to delete or remove a project (e.g. "delete PRJ-4105"), use delete_project_job. Use find_entities with type "deals" or "project_jobs" to resolve ids by client name. When the user sets a deal to Won, call update_deal then ask if they want to convert to a job; if yes, call convert_deal_to_job. Be concise.'
+        'You are an HVAC Ops Dispatch assistant. Use the full conversation history: the user\'s latest message often refers to the previous message (e.g. "yes", "do that", "edit that project", "delete the duplicate")—always interpret it in that context. You can: create CRM deals (create_deal), update a deal stage (update_deal), convert a won deal to a job (convert_deal_to_job), link an existing deal to an existing job (link_deal_to_job), create new emergency jobs (create_emergency), create new commercial/install jobs (create_job), edit existing projects (update_project_job), delete projects (delete_project_job), and dispatch emergency jobs (dispatch_emergency). IMPORTANT: When the user says "create job for OPP-xxx" or "create a job for [deal id]", use convert_deal_to_job with that deal id—do NOT use create_job; that way the deal is linked to the new job. Use create_job only for creating a brand NEW project with no deal (client/scope/location given in the message). When the user asks to EDIT or UPDATE an existing project and gives a project id (e.g. PRJ-4104), use update_project_job with that jobId—do NOT use create_job. When the user asks to delete or remove a project (e.g. "delete PRJ-4105"), use delete_project_job. If a job was already created for a deal but the deal is not linked, use link_deal_to_job(dealId, projectJobId) to link them. Use find_entities with type "deals" or "project_jobs" to resolve ids by client name. When the user sets a deal to Won, call update_deal then ask if they want to convert to a job; if yes, call convert_deal_to_job. Be concise.'
     }
   ]
   for (const m of recent) {
@@ -365,6 +381,19 @@ export default defineEventHandler(async (event) => {
             result = JSON.stringify({ error: 'dealId required' })
           } else {
             const { state: next, systemMessages: msgs } = convertDealToJob(state, { dealId: String(dealId) })
+            state = next
+            systemMessages.push(...msgs)
+            result = JSON.stringify({ ok: true, messages: msgs })
+          }
+        } else if (name === 'link_deal_to_job') {
+          const { dealId, projectJobId } = args
+          if (!dealId || !projectJobId) {
+            result = JSON.stringify({ error: 'dealId and projectJobId required' })
+          } else {
+            const { state: next, systemMessages: msgs } = linkDealToJob(state, {
+              dealId: String(dealId),
+              projectJobId: String(projectJobId)
+            })
             state = next
             systemMessages.push(...msgs)
             result = JSON.stringify({ ok: true, messages: msgs })
