@@ -41,7 +41,7 @@
             >
               {{ msg.role === 'human' ? 'Dispatcher' : msg.role === 'system' ? 'System' : 'AI Ops' }}
             </p>
-            {{ msg.text }}
+            <div class="chat-message-body whitespace-pre-wrap break-words" v-html="formatChatMessage(msg.text)"></div>
           </div>
         </div>
         <div v-if="isAiTyping" class="flex justify-end">
@@ -292,6 +292,60 @@ function pickNoun(code: string) {
 async function scrollChatToBottom() {
   await nextTick()
   if (chatWindowEl.value) chatWindowEl.value.scrollTop = chatWindowEl.value.scrollHeight
+}
+
+function formatChatMessage(text: string): string {
+  if (!text?.trim()) return ''
+  const clean = (s: string) => String(s).replace(/\*\*/g, '').trim()
+  const escape = (s: string) =>
+    clean(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+  const lines = text.split(/\n/)
+  const out: string[] = []
+  let i = 0
+  while (i < lines.length) {
+    const line = lines[i] ?? ''
+    const orderedMatch = /^(\d+)\.\s+(.+)$/.exec(line)
+    const unorderedMatch = /^[-*]\s+(.+)$/.exec(line)
+    if (orderedMatch) {
+      const items: string[] = []
+      while (i < lines.length && /^\d+\.\s+.+$/.test(lines[i] ?? '')) {
+        const m = /^\d+\.\s+(.+)$/.exec(lines[i] ?? '')
+        if (m?.[1]) {
+          let liContent = escape(m[1])
+          i++
+          const subItems: string[] = []
+          while (i < lines.length && /^[-*]\s+(.+)$/.test(lines[i] ?? '')) {
+            const sub = /^[-*]\s+(.+)$/.exec(lines[i] ?? '')
+            if (sub?.[1]) subItems.push('<li>' + escape(sub[1]) + '</li>')
+            i++
+          }
+          if (subItems.length) liContent += '<ul class="list-disc list-inside space-y-0.5 mt-0.5 ml-4">' + subItems.join('') + '</ul>'
+          items.push('<li class="space-y-0.5">' + liContent + '</li>')
+        } else {
+          i++
+        }
+      }
+      out.push('<ol class="list-decimal list-inside space-y-1 my-1 ml-1">' + items.join('') + '</ol>')
+      continue
+    }
+    if (unorderedMatch) {
+      const items: string[] = []
+      while (i < lines.length && /^[-*]\s+.+$/.test(lines[i] ?? '')) {
+        const m = /^[-*]\s+(.+)$/.exec(lines[i] ?? '')
+        if (m?.[1]) items.push('<li>' + escape(m[1]) + '</li>')
+        i++
+      }
+      out.push('<ul class="list-disc list-inside space-y-0.5 my-1 ml-1">' + items.join('') + '</ul>')
+      continue
+    }
+    out.push(escape(line) + (i < lines.length - 1 ? '<br>' : ''))
+    i++
+  }
+  return out.join('')
 }
 
 watch(chatMessages, scrollChatToBottom, { deep: true })
