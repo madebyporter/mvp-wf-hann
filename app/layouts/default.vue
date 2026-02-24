@@ -312,15 +312,20 @@ function formatChatMessage(text: string): string {
     const unorderedMatch = /^[-*]\s+(.+)$/.exec(line)
     if (orderedMatch) {
       const items: string[] = []
-      while (i < lines.length && /^\d+\.\s+.+$/.test(lines[i] ?? '')) {
+      while (i < lines.length) {
+        while (i < lines.length && (lines[i] ?? '').trim() === '') i++ // skip blanks
+        if (i >= lines.length || !/^\d+\.\s+.+$/.test(lines[i] ?? '')) break
         const m = /^\d+\.\s+(.+)$/.exec(lines[i] ?? '')
         if (m?.[1]) {
           let liContent = escape(m[1])
           i++
           const subItems: string[] = []
-          while (i < lines.length && /^[-*]\s+(.+)$/.test(lines[i] ?? '')) {
-            const sub = /^[-*]\s+(.+)$/.exec(lines[i] ?? '')
-            if (sub?.[1]) subItems.push('<li>' + escape(sub[1]) + '</li>')
+          while (i < lines.length) {
+            const next = lines[i] ?? ''
+            if (/^\d+\.\s+/.test(next)) break // next main item
+            if (next.trim() === '') break // blank line ends sub-items
+            const subText = next.trim().replace(/^[-*]\s+/, '') // drop leading "- " or "* "
+            subItems.push('<li>' + escape(subText) + '</li>')
             i++
           }
           if (subItems.length) liContent += '<ul class="list-disc list-inside space-y-0.5 mt-0.5 ml-4">' + subItems.join('') + '</ul>'
@@ -340,6 +345,10 @@ function formatChatMessage(text: string): string {
         i++
       }
       out.push('<ul class="list-disc list-inside space-y-0.5 my-1 ml-1">' + items.join('') + '</ul>')
+      continue
+    }
+    if (line.trim() === '') {
+      i++
       continue
     }
     out.push(escape(line) + (i < lines.length - 1 ? '<br>' : ''))
