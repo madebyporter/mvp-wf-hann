@@ -182,6 +182,26 @@ const TOOLS = [
         required: ['type', 'query']
       }
     }
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'query_data',
+      description: 'Query or aggregate data you have in state. Use for ANY question about the data: counts, totals, filtering by date or deal stage. Examples: "how many deals created today?" -> entity deals, dateFilter created; "total value of all deals" -> entity deals, aggregate sum, field dealAmount; "total value of deals NOT won" or "value of deals that have not been won" -> entity deals, excludeDealStage Won, aggregate sum, field dealAmount; "only Won deals" -> entity deals, dealStage Won. Deal stages: Lead, Proposal Sent, Won, Lost. Always use this tool for data questions—never say you cannot access the data.',
+      parameters: {
+        type: 'object',
+        properties: {
+          entity: { type: 'string', enum: ['deals', 'project_jobs', 'emergency_jobs'], description: 'What to query' },
+          dateFilter: { type: 'string', enum: ['created', 'updated'], description: 'Filter by created or updated date' },
+          date: { type: 'string', description: 'YYYY-MM-DD. If dateFilter is set and date omitted, today is used.' },
+          dealStage: { type: 'string', enum: ['Lead', 'Proposal Sent', 'Won', 'Lost'], description: 'For entity deals: include only this stage' },
+          excludeDealStage: { type: 'string', enum: ['Lead', 'Proposal Sent', 'Won', 'Lost'], description: 'For entity deals: exclude this stage (e.g. Won for "not won yet")' },
+          aggregate: { type: 'string', enum: ['count', 'sum'], description: 'Return count or sum' },
+          field: { type: 'string', description: 'For aggregate sum: field name, e.g. dealAmount (deals only)' }
+        },
+        required: ['entity']
+      }
+    }
   }
 ]
 
@@ -196,7 +216,7 @@ function buildOpenAIMessages(chatMessages: { role: string; text: string }[]) {
     {
       role: 'system',
       content:
-        'You are an HVAC Ops Dispatch assistant. Use the full conversation history: the user\'s latest message often refers to the previous message (e.g. "yes", "do that", "edit that project", "delete the duplicate")—always interpret it in that context. You can: create CRM deals (create_deal), update a deal stage (update_deal), convert a won deal to a job (convert_deal_to_job), link an existing deal to an existing job (link_deal_to_job), create new emergency jobs (create_emergency), create new commercial/install jobs (create_job), edit existing projects (update_project_job), delete projects (delete_project_job), and dispatch emergency jobs (dispatch_emergency). IMPORTANT: When the user says "create job for OPP-xxx" or "create a job for [deal id]", use convert_deal_to_job with that deal id—do NOT use create_job; that way the deal is linked to the new job. Use create_job only for creating a brand NEW project with no deal (client/scope/location given in the message). When the user asks to EDIT or UPDATE an existing project and gives a project id (e.g. PRJ-4104), use update_project_job with that jobId—do NOT use create_job. When the user asks to delete or remove a project (e.g. "delete PRJ-4105"), use delete_project_job. If a job was already created for a deal but the deal is not linked, use link_deal_to_job(dealId, projectJobId) to link them. Use find_entities with type "deals" or "project_jobs" to resolve ids by client name. When the user sets a deal to Won, call update_deal then ask if they want to convert to a job; if yes, call convert_deal_to_job. Be concise.'
+        'You are an HVAC Ops Dispatch assistant. You have full access to the data in state. Use the full conversation history: the user\'s latest message often refers to the previous message (e.g. "yes", "do that", "edit that project", "delete the duplicate")—always interpret it in that context. For ANY question about the data (how many deals created today, total value of deals, total value of deals today, count of jobs, etc.) use the query_data tool—you have the data, so never say you cannot access or retrieve it. You can: query_data (counts, sums, filter by date), create CRM deals (create_deal), update a deal stage (update_deal), convert a won deal to a job (convert_deal_to_job), link an existing deal to an existing job (link_deal_to_job), create new emergency jobs (create_emergency), create new commercial/install jobs (create_job), edit existing projects (update_project_job), delete projects (delete_project_job), and dispatch emergency jobs (dispatch_emergency). IMPORTANT: When the user says "create job for OPP-xxx" or "create a job for [deal id]", use convert_deal_to_job with that deal id—do NOT use create_job. Use create_job only for creating a brand NEW project with no deal. When the user asks to EDIT or UPDATE an existing project and gives a project id, use update_project_job. When the user asks to delete or remove a project, use delete_project_job. If a job was already created for a deal but the deal is not linked, use link_deal_to_job. Use find_entities to resolve ids by client name. When the user sets a deal to Won, call update_deal then ask if they want to convert to a job; if yes, call convert_deal_to_job. Be concise.'
     }
   ]
   for (const m of recent) {
@@ -356,6 +376,53 @@ export default defineEventHandler(async (event) => {
             )
           } else {
             result = JSON.stringify({ error: 'Unknown type' })
+          }
+        } else if (name === 'query_data') {
+          const { entity, dateFilter, date, aggregate, field, dealStage, excludeDealStage } = args
+          const targetDate = (date && String(date).slice(0, 10)) || (dateFilter ? new Date().toISOString().slice(0, 10) : null)
+          const norm = (s: string) => (s || '').slice(0, 10)
+
+          if (entity === 'deals') {
+            let list = state.deals
+            if (dateFilter && targetDate) {
+              const key = dateFilter === 'created' ? 'createdDate' : 'updatedDate'
+              list = list.filter((d) => norm((d as any)[key]) === targetDate)
+            }
+            if (dealStage) list = list.filter((d) => d.dealStage === dealStage)
+            if (excludeDealStage) list = list.filter((d) => d.dealStage !== excludeDealStage)
+            const count = list.length
+            let total: number | undefined
+            if (aggregate === 'sum' && (field === 'dealAmount' || field === 'deal_amount')) {
+              total = list.reduce((acc, d) => acc + (d.dealAmount ?? 0), 0)
+            }
+            const items = list.map((d) => ({
+              id: d.id,
+              dealTitle: d.dealTitle,
+              dealStage: d.dealStage,
+              dealAmount: d.dealAmount,
+              createdDate: d.createdDate,
+              updatedDate: d.updatedDate
+            }))
+            result = JSON.stringify(total !== undefined ? { count, total, items } : { count, items })
+          } else if (entity === 'project_jobs') {
+            let list = state.jobs.install
+            if (dateFilter && targetDate) {
+              const key = dateFilter === 'created' ? 'createdAt' : 'createdAt'
+              list = list.filter((j) => norm((j as any)[key]) === targetDate)
+            }
+            const count = list.length
+            const items = list.map((j) => ({ id: j.id, client: j.client, scope: j.scope, stage: j.stage, createdAt: (j as any).createdAt }))
+            result = JSON.stringify({ count, items })
+          } else if (entity === 'emergency_jobs') {
+            let list = state.jobs.emergency
+            if (dateFilter && targetDate) {
+              list = list.filter((j) => norm((j as any).createdAt) === targetDate)
+            }
+            const count = list.length
+            const items = list.map((j) => ({ ticket: j.ticket, issue: j.issue, status: j.status, createdAt: (j as any).createdAt }))
+            result = JSON.stringify({ count, items })
+          } else {
+            result = JSON.stringify({ error: 'entity must be deals, project_jobs, or emergency_jobs' })
           }
         } else if (name === 'update_deal') {
           const { dealId, dealStage } = args
