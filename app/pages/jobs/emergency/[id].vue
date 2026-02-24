@@ -49,7 +49,7 @@
         </ul>
       </div>
 
-      <form v-else class="mt-4 grid gap-4 md:grid-cols-2 text-sm" @submit.prevent="saveJob">
+      <form v-if="editing" class="mt-4 grid gap-4 md:grid-cols-2 text-sm" @submit.prevent="saveJob">
         <div>
           <label class="block text-slate-500 mb-1">Issue</label>
           <input v-model="form.issue" type="text" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" />
