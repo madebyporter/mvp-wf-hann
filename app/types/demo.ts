@@ -40,6 +40,7 @@ export type EmergencyJob = {
   status: EmergencyStatus | string
   crewId?: string
   notes?: string[]
+  createdAt?: string
 }
 
 export type ProjectJob = {
@@ -52,6 +53,7 @@ export type ProjectJob = {
   currentWork?: string
   nextStep?: string
   notes?: string[]
+  createdAt?: string
 }
 
 export type Crew = {

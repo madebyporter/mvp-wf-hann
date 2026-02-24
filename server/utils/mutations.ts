@@ -47,7 +47,8 @@ export function createEmergencyJob(
     city,
     eta: 'TBD',
     priority,
-    status: 'Awaiting crew'
+    status: 'Awaiting crew',
+    createdAt: new Date().toISOString()
   }
   const emergency = [...state.jobs.emergency, newJob]
   const next: DemoState = { ...state, jobs: { ...state.jobs, emergency } }
@@ -102,7 +103,8 @@ export function createProjectJob(
     location,
     stage,
     stageClass: projectStageClass(stage),
-    notes: []
+    notes: [],
+    createdAt: new Date().toISOString()
   }
   const install = [...state.jobs.install, newJob]
   const next: DemoState = { ...state, jobs: { ...state.jobs, install } }

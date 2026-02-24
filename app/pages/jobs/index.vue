@@ -182,8 +182,16 @@ import type { EmergencyJob } from '~/types/demo'
 const { state, dispatchEmergencyMutation, createProjectJobMutation } = useDemoState()
 const { showToast } = useToast()
 
-const emergencyQueue = computed(() => state.value.jobs.emergency)
-const installJobs = computed(() => state.value.jobs.install)
+const emergencyQueue = computed(() =>
+  [...state.value.jobs.emergency].sort((a, b) =>
+    (b.createdAt ?? b.ticket).localeCompare(a.createdAt ?? a.ticket)
+  )
+)
+const installJobs = computed(() =>
+  [...state.value.jobs.install].sort((a, b) =>
+    (b.createdAt ?? b.id).localeCompare(a.createdAt ?? a.id)
+  )
+)
 const crews = computed(() => state.value.crews)
 
 const dispatchModalJob = ref<EmergencyJob | null>(null)

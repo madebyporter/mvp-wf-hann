@@ -126,7 +126,9 @@ const form = ref({
   renewalDueInDays: undefined as number | undefined
 })
 
-const deals = computed(() => state.value.deals)
+const deals = computed(() =>
+  [...state.value.deals].sort((a, b) => b.createdDate.localeCompare(a.createdDate))
+)
 
 function dealTitle(deal: Deal) {
   const client = state.value.clients.find((c) => c.id === deal.clientId)
