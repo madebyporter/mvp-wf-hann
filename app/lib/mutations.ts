@@ -4,6 +4,7 @@ import type {
   DealStage,
   DemoState,
   EmergencyJob,
+  ProjectJob,
   ServicePlanTier
 } from '~/types/demo'
 
@@ -74,6 +75,61 @@ export function createEmergencyJob(
   return {
     state: next,
     systemMessages: [`Created emergency ${ticket}: ${issue} in ${city} (${priority}). Awaiting crew.`]
+  }
+}
+
+const PROJECT_STAGES = [
+  'Planned',
+  'Scheduled',
+  'In Progress',
+  'Awaiting Permit',
+  'Permit Follow-up Sent',
+  'On Hold',
+  'Complete',
+  'Cancelled'
+] as const
+
+function projectStageClass(stage: string): string {
+  if (/progress/i.test(stage)) return 'bg-blue-100 text-blue-700'
+  if (/permit|await/i.test(stage)) return 'bg-amber-100 text-amber-700'
+  if (/scheduled|complete/i.test(stage)) return 'bg-emerald-100 text-emerald-700'
+  if (/hold|cancelled/i.test(stage)) return 'bg-slate-100 text-slate-700'
+  return 'bg-purple-100 text-purple-700'
+}
+
+function nextProjectId(state: DemoState): string {
+  const nums = state.jobs.install
+    .map((j) => j.id.match(/^PRJ-(\d+)$/i)?.[1])
+    .filter(Boolean)
+    .map(Number)
+  const max = nums.length ? Math.max(...nums) : 4100
+  return `PRJ-${max + 1}`
+}
+
+export function createProjectJob(
+  state: DemoState,
+  args: { client: string; scope: string; location: string; stage?: string }
+): { state: DemoState; systemMessages: string[] } {
+  const client = args.client?.trim() || 'Unknown client'
+  const scope = args.scope?.trim() || 'Install / service'
+  const location = args.location?.trim() || 'TBD'
+  const stageVal = args.stage?.trim()
+  const stage = stageVal && (PROJECT_STAGES as readonly string[]).includes(stageVal) ? stageVal : 'Planned'
+  const id = nextProjectId(state)
+  const newJob: ProjectJob = {
+    id,
+    client,
+    scope,
+    location,
+    stage,
+    stageClass: projectStageClass(stage),
+    notes: []
+  }
+  const install = [...state.jobs.install, newJob]
+  const next: DemoState = { ...state, jobs: { ...state.jobs, install } }
+  return {
+    state: next,
+    systemMessages: [`Created project ${id}: ${client} — ${scope} (${location}). Stage: ${stage}.`]
   }
 }
 

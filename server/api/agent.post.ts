@@ -2,6 +2,8 @@ import type { DemoState } from '../utils/demo-types'
 import {
   appendSystemMessages,
   createDeal,
+  createEmergencyJob,
+  createProjectJob,
   dispatchEmergencyJob,
   recomputeQuoteConversion
 } from '../utils/mutations'
@@ -34,8 +36,41 @@ const TOOLS = [
   {
     type: 'function' as const,
     function: {
+      name: 'create_emergency',
+      description: 'Create a new emergency job in the queue. Use when the user asks to create, log, or add an emergency (e.g. "no heat in Lakewood", "burst pipe Cleveland high priority").',
+      parameters: {
+        type: 'object',
+        properties: {
+          issue: { type: 'string', description: 'Brief description of the emergency e.g. No heat, Burst pipe, Boiler reset' },
+          city: { type: 'string', description: 'City or location e.g. Lakewood, Parma, Cleveland' },
+          priority: { type: 'string', enum: ['High', 'Med'], description: 'Priority level' }
+        },
+        required: ['issue', 'city']
+      }
+    }
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'create_job',
+      description: 'Create a new commercial / install (project) job in the pipeline. Use when the user asks to create, add, or log a new install job, project, or commercial job (e.g. "new job for Westlake Medical, rooftop replacement, Westlake", "add project Lakewood School chiller upgrade").',
+      parameters: {
+        type: 'object',
+        properties: {
+          client: { type: 'string', description: 'Client or company name e.g. Westlake Medical Campus' },
+          scope: { type: 'string', description: 'Scope of work e.g. Rooftop unit replacement + controls retrofit' },
+          location: { type: 'string', description: 'City or location e.g. Westlake, Parma' },
+          stage: { type: 'string', enum: ['Planned', 'Scheduled', 'In Progress', 'Awaiting Permit', 'On Hold', 'Complete'], description: 'Project stage' }
+        },
+        required: ['client', 'scope', 'location']
+      }
+    }
+  },
+  {
+    type: 'function' as const,
+    function: {
       name: 'dispatch_emergency',
-      description: 'Dispatch an emergency job: assign crew, set status (Awaiting crew, En route, On site, Completed), ETA in minutes, optionally notify customer.',
+      description: 'Dispatch an existing emergency job: assign crew, set status (Awaiting crew, En route, On site, Completed), ETA in minutes, optionally notify customer.',
       parameters: {
         type: 'object',
         properties: {
@@ -72,7 +107,7 @@ function buildOpenAIMessages(chatMessages: { role: string; text: string }[]) {
     {
       role: 'system',
       content:
-        'You are an HVAC Ops Dispatch assistant. You can create CRM deals (create_deal) and dispatch emergency jobs (dispatch_emergency). Use find_entities to resolve crew or job ids when needed. Be concise. After performing an action, summarize what you did for the user.'
+        'You are an HVAC Ops Dispatch assistant. You can: create CRM deals (create_deal), create new emergency jobs (create_emergency: issue, city, priority), create new commercial/install jobs (create_job: client, scope, location, stage), and dispatch existing emergency jobs (dispatch_emergency). Use find_entities to resolve crew or job ids when needed. Be concise. After performing an action, summarize what you did for the user.'
     }
   ]
   for (const m of chatMessages) {
@@ -233,6 +268,35 @@ export default defineEventHandler(async (event) => {
               address: address ? String(address) : undefined
             })
             state = recomputeQuoteConversion(next)
+            systemMessages.push(...msgs)
+            result = JSON.stringify({ ok: true, messages: msgs })
+          }
+        } else if (name === 'create_emergency') {
+          const { issue, city, priority } = args
+          if (!issue || !city) {
+            result = JSON.stringify({ error: 'issue and city required' })
+          } else {
+            const { state: next, systemMessages: msgs } = createEmergencyJob(state, {
+              issue: String(issue),
+              city: String(city),
+              priority: priority === 'Med' ? 'Med' : 'High'
+            })
+            state = next
+            systemMessages.push(...msgs)
+            result = JSON.stringify({ ok: true, messages: msgs })
+          }
+        } else if (name === 'create_job') {
+          const { client, scope, location, stage } = args
+          if (!client || !scope || !location) {
+            result = JSON.stringify({ error: 'client, scope, and location required' })
+          } else {
+            const { state: next, systemMessages: msgs } = createProjectJob(state, {
+              client: String(client),
+              scope: String(scope),
+              location: String(location),
+              stage: stage ? String(stage) : undefined
+            })
+            state = next
             systemMessages.push(...msgs)
             result = JSON.stringify({ ok: true, messages: msgs })
           }

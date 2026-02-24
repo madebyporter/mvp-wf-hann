@@ -34,9 +34,18 @@
     </div>
 
     <div class="rounded-xl border p-5">
-      <div class="flex items-center justify-between gap-3">
+      <div class="flex items-center justify-between gap-3 flex-wrap">
         <h2 class="font-semibold">Commercial / Non-Emergency Install Pipeline</h2>
-        <span class="text-xs text-slate-400">All {{ installJobs.length }} projects</span>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-400">All {{ installJobs.length }} projects</span>
+          <button
+            type="button"
+            class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            @click="showNewJobModal = true"
+          >
+            New Job
+          </button>
+        </div>
       </div>
       <div class="mt-4 space-y-2">
         <NuxtLink v-for="job in installJobs" :key="job.id" :to="`/jobs/projects/${job.id}`" class="w-full text-left rounded-lg border border-black/20 p-3 flex justify-between items-center hover:bg-slate-50">
@@ -100,13 +109,77 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- New Job (commercial/install) modal -->
+    <Teleport to="body">
+      <div
+        v-if="showNewJobModal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+        @click.self="showNewJobModal = false"
+      >
+        <div class="rounded-xl border bg-white p-6 w-full max-w-md shadow-xl space-y-4">
+          <h3 class="font-semibold text-lg">New job (commercial / install)</h3>
+          <form class="space-y-3" @submit.prevent="submitNewJob">
+            <div>
+              <label class="block text-xs font-medium text-slate-500 mb-1">Client *</label>
+              <input
+                v-model="newJobForm.client"
+                type="text"
+                required
+                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                placeholder="e.g. Westlake Medical Campus"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-500 mb-1">Scope *</label>
+              <input
+                v-model="newJobForm.scope"
+                type="text"
+                required
+                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                placeholder="e.g. Rooftop unit replacement + controls"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-500 mb-1">Location *</label>
+              <input
+                v-model="newJobForm.location"
+                type="text"
+                required
+                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                placeholder="e.g. Westlake, Parma"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-500 mb-1">Stage</label>
+              <select v-model="newJobForm.stage" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <option value="Planned">Planned</option>
+                <option value="Scheduled">Scheduled</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Awaiting Permit">Awaiting Permit</option>
+                <option value="On Hold">On Hold</option>
+                <option value="Complete">Complete</option>
+              </select>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50" @click="showNewJobModal = false">
+                Cancel
+              </button>
+              <button type="submit" class="rounded-lg bg-slate-900 text-white px-3 py-1.5 text-sm">
+                Create job
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { EmergencyJob } from '~/types/demo'
 
-const { state, dispatchEmergencyMutation } = useDemoState()
+const { state, dispatchEmergencyMutation, createProjectJobMutation } = useDemoState()
 const { showToast } = useToast()
 
 const emergencyQueue = computed(() => state.value.jobs.emergency)
@@ -120,6 +193,14 @@ const dispatchForm = ref({
   etaTargetMinutes: undefined as number | undefined,
   notifyCustomer: false,
   note: ''
+})
+
+const showNewJobModal = ref(false)
+const newJobForm = ref({
+  client: '',
+  scope: '',
+  location: '',
+  stage: 'Planned'
 })
 
 function openDispatchModal(job: EmergencyJob) {
@@ -151,5 +232,19 @@ function submitDispatch() {
     { showToast }
   )
   closeDispatchModal()
+}
+
+function submitNewJob() {
+  createProjectJobMutation(
+    {
+      client: newJobForm.value.client,
+      scope: newJobForm.value.scope,
+      location: newJobForm.value.location,
+      stage: newJobForm.value.stage
+    },
+    { showToast }
+  )
+  showNewJobModal.value = false
+  newJobForm.value = { client: '', scope: '', location: '', stage: 'Planned' }
 }
 </script>

@@ -4,6 +4,7 @@ import {
   appendSystemMessages,
   createDeal,
   createEmergencyJob,
+  createProjectJob,
   dispatchEmergencyJob,
   queueNotification,
   recomputeQuoteConversion,
@@ -108,6 +109,19 @@ export function useDemoState() {
     return { systemMessages }
   }
 
+  function createProjectJobMutation(
+    args: { client: string; scope: string; location: string; stage?: string },
+    options?: { showToast?: (msg: string) => void }
+  ) {
+    const { state: next, systemMessages } = createProjectJob(state.value, args)
+    state.value = appendSystemMessages(next, systemMessages)
+    persist()
+    if (options?.showToast && systemMessages.length) {
+      systemMessages.forEach((m) => options.showToast!(m))
+    }
+    return { systemMessages }
+  }
+
   function appendSystemMessagesOnly(messages: string[], showToast?: (msg: string) => void) {
     applySystemMessages(messages, showToast)
   }
@@ -122,6 +136,7 @@ export function useDemoState() {
     persist,
     createDealMutation,
     createEmergencyJobMutation,
+    createProjectJobMutation,
     dispatchEmergencyMutation,
     appendSystemMessagesOnly,
     setStateFromServer,
