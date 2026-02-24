@@ -1,0 +1,75 @@
+{
+  "clients": [
+    { "id": "westlake-medical-campus", "name": "Westlake Medical Campus", "updatedAt": "2026-01-20T00:00:00.000Z" },
+    { "id": "parma-logistics-center", "name": "Parma Logistics Center", "updatedAt": "2026-01-21T00:00:00.000Z" },
+    { "id": "lakewood-school-district", "name": "Lakewood School District", "updatedAt": "2026-01-22T00:00:00.000Z" },
+    { "id": "strongsville-civic-center", "name": "Strongsville Civic Center", "updatedAt": "2026-01-23T00:00:00.000Z" },
+    { "id": "cleveland-family-dental", "name": "Cleveland Family Dental", "updatedAt": "2026-01-24T00:00:00.000Z" },
+    { "id": "north-ridge-manufacturing", "name": "North Ridge Manufacturing", "updatedAt": "2026-01-25T00:00:00.000Z" },
+    { "id": "aurora-property-group", "name": "Aurora Property Group", "updatedAt": "2026-01-26T00:00:00.000Z" },
+    { "id": "brook-park-distribution", "name": "Brook Park Distribution", "updatedAt": "2026-01-27T00:00:00.000Z" },
+    { "id": "mentor-senior-living", "name": "Mentor Senior Living", "updatedAt": "2026-01-28T00:00:00.000Z" },
+    { "id": "rocky-river-retail-plaza", "name": "Rocky River Retail Plaza", "updatedAt": "2026-01-29T00:00:00.000Z" },
+    { "id": "euclid-office-complex", "name": "Euclid Office Complex", "updatedAt": "2026-01-30T00:00:00.000Z" },
+    { "id": "medina-sports-facility", "name": "Medina Sports Facility", "updatedAt": "2026-01-31T00:00:00.000Z" },
+    { "id": "avon-tech-park", "name": "Avon Tech Park", "updatedAt": "2026-02-01T00:00:00.000Z" },
+    { "id": "berea-apartment-holdings", "name": "Berea Apartment Holdings", "updatedAt": "2026-02-02T00:00:00.000Z" },
+    { "id": "shaker-heights-clinic", "name": "Shaker Heights Clinic", "updatedAt": "2026-02-03T00:00:00.000Z" },
+    { "id": "solon-warehouse-group", "name": "Solon Warehouse Group", "updatedAt": "2026-02-04T00:00:00.000Z" },
+    { "id": "willoughby-dental-care", "name": "Willoughby Dental Care", "updatedAt": "2026-02-05T00:00:00.000Z" },
+    { "id": "lorain-food-processing", "name": "Lorain Food Processing", "updatedAt": "2026-02-06T00:00:00.000Z" },
+    { "id": "kent-state-annex", "name": "Kent State Annex", "updatedAt": "2026-02-07T00:00:00.000Z" },
+    { "id": "garfield-heights-schools", "name": "Garfield Heights Schools", "updatedAt": "2026-02-08T00:00:00.000Z" },
+    { "id": "olmsted-municipal-garage", "name": "Olmsted Municipal Garage", "updatedAt": "2026-02-09T00:00:00.000Z" },
+    { "id": "mayfield-property-mgmt", "name": "Mayfield Property Mgmt", "updatedAt": "2026-02-10T00:00:00.000Z" },
+    { "id": "beachwood-legal-group", "name": "Beachwood Legal Group", "updatedAt": "2026-02-11T00:00:00.000Z" },
+    { "id": "twinsburg-assembly-plant", "name": "Twinsburg Assembly Plant", "updatedAt": "2026-02-12T00:00:00.000Z" },
+    { "id": "hudson-rehab-center", "name": "Hudson Rehab Center", "updatedAt": "2026-02-13T00:00:00.000Z" },
+    { "id": "brunswick-cold-storage", "name": "Brunswick Cold Storage", "updatedAt": "2026-02-14T00:00:00.000Z" },
+    { "id": "independence-office-suites", "name": "Independence Office Suites", "updatedAt": "2026-02-15T00:00:00.000Z" },
+    { "id": "fairview-hospitality-group", "name": "Fairview Hospitality Group", "updatedAt": "2026-02-16T00:00:00.000Z" },
+    { "id": "maple-heights-transit-ops", "name": "Maple Heights Transit Ops", "updatedAt": "2026-02-17T00:00:00.000Z" },
+    { "id": "bay-village-community-center", "name": "Bay Village Community Center", "updatedAt": "2026-02-18T00:00:00.000Z" },
+    { "id": "cuyahoga-contractor-supply", "name": "Cuyahoga Contractor Supply", "updatedAt": "2026-02-19T00:00:00.000Z" }
+  ],
+  "deals": [
+    { "id": "OPP-5001", "clientId": "westlake-medical-campus", "dealTitle": "Westlake Medical Campus", "dealAmount": 12000, "dealStage": "Won", "servicePlanTier": "None", "createdDate": "2026-01-10", "updatedDate": "2026-01-20", "source": "Referral" },
+    { "id": "OPP-5002", "clientId": "parma-logistics-center", "dealTitle": "Parma Logistics Center", "dealAmount": 13750, "dealStage": "Won", "servicePlanTier": "None", "createdDate": "2026-01-11", "updatedDate": "2026-01-21", "source": "Inbound" },
+    { "id": "OPP-5003", "clientId": "lakewood-school-district", "dealTitle": "Lakewood School District", "dealAmount": 15500, "dealStage": "Won", "servicePlanTier": "None", "createdDate": "2026-01-12", "updatedDate": "2026-01-22", "source": "Referral" },
+    { "id": "OPP-5020", "clientId": "garfield-heights-schools", "dealTitle": "Garfield Heights Schools", "dealAmount": 45250, "dealStage": "Proposal Sent", "servicePlanTier": "None", "createdDate": "2026-01-29", "updatedDate": "2026-02-08", "source": "Inbound" },
+    { "id": "OPP-5028", "clientId": "fairview-hospitality-group", "dealTitle": "Fairview Hospitality Group", "dealAmount": 59250, "dealStage": "Lead", "servicePlanTier": "None", "createdDate": "2026-02-06", "updatedDate": "2026-02-16", "source": "Inbound" },
+    { "id": "OPP-5004", "clientId": "strongsville-civic-center", "dealTitle": "Strongsville Civic Center", "dealAmount": 17250, "dealStage": "Won", "servicePlanTier": "None", "createdDate": "2026-01-13", "updatedDate": "2026-01-23", "source": "Inbound" },
+    { "id": "OPP-5021", "clientId": "olmsted-municipal-garage", "dealTitle": "Olmsted Municipal Garage", "dealAmount": 47000, "dealStage": "Proposal Sent", "servicePlanTier": "None", "createdDate": "2026-01-30", "updatedDate": "2026-02-09", "source": "Referral" },
+    { "id": "OPP-5029", "clientId": "maple-heights-transit-ops", "dealTitle": "Maple Heights Transit Ops", "dealAmount": 61000, "dealStage": "Lead", "servicePlanTier": "None", "createdDate": "2026-02-07", "updatedDate": "2026-02-17", "source": "Referral" }
+  ],
+  "jobs": {
+    "emergency": [
+      { "ticket": "EM-2041", "issue": "No heat", "city": "Parma", "eta": "45 min", "etaTargetMinutes": 45, "priority": "High", "status": "En route", "crewId": "crew-a3" },
+      { "ticket": "EM-2042", "issue": "Burst pipe", "city": "Lakewood", "eta": "60 min", "etaTargetMinutes": 60, "priority": "High", "status": "Awaiting crew" },
+      { "ticket": "EM-2043", "issue": "Boiler reset", "city": "Strongsville", "eta": "90 min", "etaTargetMinutes": 90, "priority": "Med", "status": "Parts check" }
+    ],
+    "install": [
+      { "id": "PRJ-4101", "client": "Westlake Medical Campus", "scope": "Rooftop unit replacement + controls retrofit", "location": "Westlake", "stage": "In Progress", "stageClass": "bg-blue-100 text-blue-700", "currentWork": "Crews are replacing rooftop units and calibrating control panels.", "nextStep": "Run integration tests with building automation and close out QA notes.", "notes": ["Site walk completed with facilities lead.", "Panel retrofit is 70% complete.", "Controls calibration in progress on zone B."] },
+      { "id": "PRJ-4102", "client": "Parma Logistics Center", "scope": "Boiler room modernization + balancing", "location": "Parma", "stage": "Awaiting Permit", "stageClass": "bg-amber-100 text-amber-700", "currentWork": "Engineering package is complete and permit packet is queued with the city.", "nextStep": "Permit follow-up call + lock install window once approved.", "notes": ["Stamped drawings submitted to city portal.", "Waiting on permit reviewer assignment.", "Crew schedule tentatively blocked for next week."] },
+      { "id": "PRJ-4103", "client": "Lakewood School District", "scope": "Chiller controls upgrade + commissioning", "location": "Lakewood", "stage": "Scheduled", "stageClass": "bg-emerald-100 text-emerald-700", "currentWork": "Controls team is preparing panel maps and pre-config templates for commissioning.", "nextStep": "Begin onsite cutover during scheduled maintenance window and run functional tests.", "notes": ["Pre-commissioning templates drafted.", "Panel mapping review with district IT scheduled for Wednesday.", "Maintenance window confirmed for weekend cutover."] }
+    ]
+  },
+  "crews": [
+    { "id": "crew-a2", "name": "Crew A2" },
+    { "id": "crew-a3", "name": "Crew A3" },
+    { "id": "crew-b1", "name": "Crew B1" },
+    { "id": "crew-c2", "name": "Crew C2" }
+  ],
+  "notifications": [],
+  "chatMessages": [
+    { "role": "human", "text": "What is the status of EM-2042 right now?" },
+    { "role": "ai", "text": "EM-2042 is awaiting crew assignment. ETA target is 60 min in Lakewood." },
+    { "role": "human", "text": "Reassign EM-2042 to Crew A2 and notify office." },
+    { "role": "ai", "text": "Done. EM-2042 now shows En route with Crew A2. Office + customer updates queued." }
+  ],
+  "dashboardStats": {
+    "quoteConversion": { "quotesSent": 9, "won": 5, "conversion": 56 },
+    "homeServicePlans": { "renewalsDue7d": 46, "scheduledVisits": 28, "atRiskAccounts": 9 },
+    "installCapacity": { "largeInstallsActive": 7, "crewsAssigned": 11, "pendingPermits": 3 }
+  }
+}

@@ -1,30 +1,45 @@
 <template>
   <div class="space-y-6">
-    <template v-if="selectedJob">
+    <template v-if="selectedEmergency">
       <button type="button" class="text-sm text-blue-700 hover:underline" @click="selectedJob = null">← Back</button>
       <div class="rounded-xl border border-black bg-white p-6">
         <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-slate-900">{{ detailTitle }}</h2>
-          <span v-if="selectedJob.priority" class="text-xs px-2 py-1 rounded" :class="selectedJob.priority === 'High' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'">{{ selectedJob.priority }}</span>
-          <span v-else class="text-xs px-2 py-1 rounded" :class="selectedJob.stageClass">{{ selectedJob.stage }}</span>
+          <h2 class="text-lg font-semibold text-slate-900">Emergency Job Detail — {{ selectedEmergency.ticket }}</h2>
+          <span class="text-xs px-2 py-1 rounded" :class="selectedEmergency.priority === 'High' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'">{{ selectedEmergency.priority }}</span>
         </div>
         <div class="mt-4 grid md:grid-cols-2 gap-6 text-sm">
           <div class="space-y-2">
-            <p><span class="text-slate-500">Location</span><br><strong class="text-slate-900">{{ selectedJob.city || selectedJob.location }}</strong></p>
-            <p v-if="selectedJob.issue"><span class="text-slate-500">Issue</span><br><strong class="text-slate-900">{{ selectedJob.issue }}</strong></p>
-            <p v-if="selectedJob.scope"><span class="text-slate-500">Scope</span><br><strong class="text-slate-900">{{ selectedJob.scope }}</strong></p>
+            <p><span class="text-slate-500">Location</span><br><strong class="text-slate-900">{{ selectedEmergency.city }}</strong></p>
+            <p><span class="text-slate-500">Issue</span><br><strong class="text-slate-900">{{ selectedEmergency.issue }}</strong></p>
           </div>
           <div class="space-y-2">
-            <p v-if="selectedJob.eta"><span class="text-slate-500">ETA target</span><br><strong class="text-slate-900">{{ selectedJob.eta }}</strong></p>
-            <p v-if="selectedJob.status"><span class="text-slate-500">Dispatch status</span><br><strong class="text-slate-900">{{ selectedJob.status }}</strong></p>
-            <p v-if="selectedJob.stage"><span class="text-slate-500">Project stage</span><br><strong class="text-slate-900">{{ selectedJob.stage }}</strong></p>
+            <p><span class="text-slate-500">ETA target</span><br><strong class="text-slate-900">{{ selectedEmergency.eta }}</strong></p>
+            <p><span class="text-slate-500">Dispatch status</span><br><strong class="text-slate-900">{{ selectedEmergency.status }}</strong></p>
           </div>
         </div>
       </div>
-      <div v-if="selectedJob.id && selectedJob.notes?.length" class="rounded-xl border border-black bg-white p-6">
+    </template>
+    <template v-else-if="selectedProject">
+      <button type="button" class="text-sm text-blue-700 hover:underline" @click="selectedJob = null">← Back</button>
+      <div class="rounded-xl border border-black bg-white p-6">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-slate-900">Project Detail — {{ selectedProject.id }}</h2>
+          <span class="text-xs px-2 py-1 rounded" :class="selectedProject.stageClass">{{ selectedProject.stage }}</span>
+        </div>
+        <div class="mt-4 grid md:grid-cols-2 gap-6 text-sm">
+          <div class="space-y-2">
+            <p><span class="text-slate-500">Location</span><br><strong class="text-slate-900">{{ selectedProject.location }}</strong></p>
+            <p><span class="text-slate-500">Scope</span><br><strong class="text-slate-900">{{ selectedProject.scope }}</strong></p>
+          </div>
+          <div class="space-y-2">
+            <p><span class="text-slate-500">Project stage</span><br><strong class="text-slate-900">{{ selectedProject.stage }}</strong></p>
+          </div>
+        </div>
+      </div>
+      <div v-if="selectedProject.notes?.length" class="rounded-xl border border-black bg-white p-6">
         <h3 class="font-semibold text-slate-900">Project notes timeline</h3>
         <ul class="mt-3 space-y-2 text-sm text-slate-700">
-          <li v-for="(note, idx) in selectedJob.notes" :key="idx" class="flex gap-2">
+          <li v-for="(note, idx) in selectedProject.notes" :key="idx" class="flex gap-2">
             <span class="text-slate-400">•</span>
             <span>{{ note }}</span>
           </li>
@@ -33,7 +48,6 @@
     </template>
 
     <template v-else>
-      <!-- Jobs module: one container with black stroke, "Jobs" title, each entry with black stroke -->
       <div class="rounded-xl border border-black bg-white p-6">
         <h2 class="text-lg font-semibold text-slate-900">Jobs</h2>
         <div class="flex items-center justify-between gap-3 mt-4">
@@ -67,7 +81,6 @@
         </div>
       </div>
 
-      <!-- CRM section: one wrapper (1px solid black), stats + recent 5 deals inside, no strokes on subsections -->
       <div v-if="currentView === 'dashboard'" class="rounded-xl border border-black bg-white p-6">
         <h2 class="text-lg font-semibold text-slate-900">CRM</h2>
         <p class="mt-1 text-sm text-slate-500">Quote → Job Conversion</p>
@@ -95,51 +108,54 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import emergencySeed from '~/data/emergencyQueue.json'
-import installSeed from '~/data/installJobs.json'
-import dashboardStatsSeed from '~/data/dashboardStats.json'
-import opportunitiesSeed from '~/data/opportunities.json'
+import { computed, ref, watch } from 'vue'
 
-type EmergencyJob = { ticket: string; issue: string; city: string; eta: string; priority: string; status: string }
-type ProjectJob = { id: string; client: string; scope: string; location: string; stage: string; stageClass: string; currentWork?: string; nextStep?: string; notes?: string[] }
-type DashboardStats = {
-  quoteConversion: { quotesSent: number; won: number; conversion: number }
-  homeServicePlans: { renewalsDue7d: number; scheduledVisits: number; atRiskAccounts: number }
-  installCapacity: { largeInstallsActive: number; crewsAssigned: number; pendingPermits: number }
-}
-type Opportunity = { id: string; company: string; contact: string; stage: string; value: number; createdDate: string; updatedDate: string; source: string; notes?: string[] }
+const { state } = useDemoState()
 
-const emergencyQueue = ref<EmergencyJob[]>(JSON.parse(JSON.stringify(emergencySeed)))
-const installJobs = ref<ProjectJob[]>(JSON.parse(JSON.stringify(installSeed)))
-const dashboardStats = ref<DashboardStats>(JSON.parse(JSON.stringify(dashboardStatsSeed)))
-const opportunities = ref<Opportunity[]>(JSON.parse(JSON.stringify(opportunitiesSeed)))
+const emergencyQueue = computed(() => state.value.jobs.emergency)
+const installJobs = computed(() => state.value.jobs.install)
+const dashboardStats = computed(() => state.value.dashboardStats)
 
-const currentView = ref<'dashboard' | 'jobs'>('dashboard')
-const selectedJob = ref<any>(null)
-
-const route = useRoute()
-const router = useRouter()
-
-const recentOpportunities = computed(() => [...opportunities.value].sort((a, b) => b.updatedDate.localeCompare(a.updatedDate)).slice(0, 5))
-
-const detailTitle = computed(() => {
-  if (!selectedJob.value) return ''
-  return selectedJob.value.ticket ? `Emergency Job Detail — ${selectedJob.value.ticket}` : `Project Detail — ${selectedJob.value.id}`
+const recentOpportunities = computed(() => {
+  const deals = [...state.value.deals]
+  const clients = state.value.clients
+  return deals
+    .sort((a, b) => b.updatedDate.localeCompare(a.updatedDate))
+    .slice(0, 5)
+    .map((d) => {
+      const client = clients.find((c) => c.id === d.clientId)
+      return {
+        id: d.id,
+        company: d.dealTitle || client?.name || d.clientId,
+        stage: d.dealStage,
+        value: d.dealAmount ?? 0,
+        updatedDate: d.updatedDate
+      }
+    })
 })
 
+const currentView = ref<'dashboard' | 'jobs'>('dashboard')
+type EmergencyJob = typeof state.value.jobs.emergency[0]
+type ProjectJob = typeof state.value.jobs.install[0]
+const selectedJob = ref<EmergencyJob | ProjectJob | null>(null)
+
+const selectedEmergency = computed(() => {
+  const j = selectedJob.value
+  return j && 'ticket' in j ? j : null
+})
+const selectedProject = computed(() => {
+  const j = selectedJob.value
+  return j && 'id' in j ? j : null
+})
+
+const route = useRoute()
+
 function openEmergency(ticket: string) {
-  selectedJob.value = emergencyQueue.value.find((job) => job.ticket === ticket) || null
+  selectedJob.value = state.value.jobs.emergency.find((j) => j.ticket === ticket) ?? null
 }
 
 function openProject(id: string) {
-  selectedJob.value = installJobs.value.find((job) => job.id === id) || null
-}
-
-function openView(view: 'dashboard' | 'jobs') {
-  currentView.value = view
-  selectedJob.value = null
-  router.replace({ query: { ...route.query, view } })
+  selectedJob.value = state.value.jobs.install.find((j) => j.id === id) ?? null
 }
 
 function opportunityStageClassFor(stage: string) {
@@ -149,29 +165,9 @@ function opportunityStageClassFor(stage: string) {
   return 'bg-amber-100 text-amber-700'
 }
 
-function recomputeQuoteStats() {
-  const quotesSent = opportunities.value.length
-  const won = opportunities.value.filter((o) => /won/i.test(o.stage)).length
-  const conversion = quotesSent ? Math.round((won / quotesSent) * 100) : 0
-  dashboardStats.value.quoteConversion = { quotesSent, won, conversion }
-}
-
-onMounted(() => {
-  recomputeQuoteStats()
-  syncViewFromRoute()
-})
-
-// When route path is /, reset to full dashboard so Jobs + CRM show (e.g. back from /crm/123)
-watch(() => route.path, (path) => {
-  if (path === '/') syncViewFromRoute()
-})
-
-watch(() => route.query.view, () => syncViewFromRoute())
-
 function syncViewFromRoute() {
   if (route.path !== '/') return
   const view = String(route.query.view || 'dashboard')
-  // Only dashboard and jobs are valid on index; crm lives at /crm
   if (view === 'jobs' || view === 'dashboard') {
     currentView.value = view
     selectedJob.value = null
@@ -180,4 +176,10 @@ function syncViewFromRoute() {
     selectedJob.value = null
   }
 }
+
+watch(() => route.path, (path) => {
+  if (path === '/') syncViewFromRoute()
+})
+watch(() => route.query.view, syncViewFromRoute)
+onMounted(syncViewFromRoute)
 </script>
