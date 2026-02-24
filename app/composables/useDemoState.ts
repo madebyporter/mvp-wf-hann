@@ -72,14 +72,14 @@ export function useDemoState() {
     },
     options?: { showToast?: (msg: string) => void }
   ) {
-    const { state: next, systemMessages } = createDeal(state.value, args)
+    const { state: next, systemMessages, dealId } = createDeal(state.value, args)
     const withStats = recomputeQuoteConversion(next)
     state.value = appendSystemMessages(withStats, systemMessages)
     persist()
     if (options?.showToast && systemMessages.length) {
       systemMessages.forEach((m) => options.showToast!(m))
     }
-    return { systemMessages }
+    return { systemMessages, dealId }
   }
 
   function dispatchEmergencyMutation(
@@ -119,13 +119,13 @@ export function useDemoState() {
     args: { client: string; scope: string; location: string; stage?: string },
     options?: { showToast?: (msg: string) => void }
   ) {
-    const { state: next, systemMessages } = createProjectJob(state.value, args)
+    const { state: next, systemMessages, jobId } = createProjectJob(state.value, args)
     state.value = appendSystemMessages(next, systemMessages)
     persist()
     if (options?.showToast && systemMessages.length) {
       systemMessages.forEach((m) => options.showToast!(m))
     }
-    return { systemMessages }
+    return { systemMessages, jobId }
   }
 
   function updateDealStageMutation(
@@ -163,6 +163,7 @@ export function useDemoState() {
       status?: string
       crewId?: string
       eta?: string
+      notes?: string[]
     },
     options?: { showToast?: (msg: string) => void }
   ) {

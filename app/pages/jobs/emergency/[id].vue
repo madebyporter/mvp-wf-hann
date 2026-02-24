@@ -42,6 +42,13 @@
         <div><p class="text-slate-500">Dispatch status</p><p class="font-medium">{{ job.status }}</p></div>
       </div>
 
+      <div v-if="!editing && job.notes?.length" class="mt-4 rounded-xl border p-5">
+        <h3 class="font-semibold">Job notes</h3>
+        <ul class="mt-3 space-y-2 text-sm text-slate-700">
+          <li v-for="(note, idx) in job.notes" :key="idx" class="flex gap-2"><span class="text-slate-400">•</span><span>{{ note }}</span></li>
+        </ul>
+      </div>
+
       <form v-else class="mt-4 grid gap-4 md:grid-cols-2 text-sm" @submit.prevent="saveJob">
         <div>
           <label class="block text-slate-500 mb-1">Issue</label>
@@ -74,6 +81,28 @@
             <option value="">Unassigned</option>
             <option v-for="c in state.crews" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-slate-500 mb-1">Job notes</label>
+          <ul v-if="form.notes.length" class="mb-2 space-y-1 text-sm text-slate-700">
+            <li v-for="(note, idx) in form.notes" :key="idx" class="flex items-center gap-2">
+              <span class="text-slate-400">•</span>
+              <span class="flex-1 min-w-0">{{ note }}</span>
+              <button type="button" class="text-slate-400 hover:text-rose-600 shrink-0" @click="removeNote(idx)">Remove</button>
+            </li>
+          </ul>
+          <div class="flex gap-2">
+            <input
+              v-model="newNote"
+              type="text"
+              class="flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm"
+              placeholder="Add a note..."
+              @keydown.enter.prevent="addNote"
+            />
+            <button type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50" @click="addNote">
+              Add note
+            </button>
+          </div>
         </div>
       </form>
     </div>
@@ -108,7 +137,8 @@ const crewName = computed(() => {
 })
 
 const editing = ref(false)
-const form = ref({ issue: '', city: '', priority: 'High', status: 'Awaiting crew', eta: '', crewId: '' })
+const newNote = ref('')
+const form = ref({ issue: '', city: '', priority: 'High', status: 'Awaiting crew', eta: '', crewId: '', notes: [] as string[] })
 
 function startEdit() {
   const j = job.value
@@ -119,9 +149,22 @@ function startEdit() {
     priority: j.priority,
     status: j.status,
     eta: j.eta ?? '',
-    crewId: j.crewId ?? ''
+    crewId: j.crewId ?? '',
+    notes: [...(j.notes ?? [])]
   }
+  newNote.value = ''
   editing.value = true
+}
+
+function addNote() {
+  const t = newNote.value.trim()
+  if (!t) return
+  form.value.notes = [...form.value.notes, t]
+  newNote.value = ''
+}
+
+function removeNote(idx: number) {
+  form.value.notes = form.value.notes.filter((_, i) => i !== idx)
 }
 
 function cancelEdit() {
@@ -139,7 +182,8 @@ function saveJob() {
       priority: form.value.priority,
       status: form.value.status,
       eta: form.value.eta || undefined,
-      crewId: form.value.crewId || undefined
+      crewId: form.value.crewId || undefined,
+      notes: form.value.notes
     },
     { showToast }
   )

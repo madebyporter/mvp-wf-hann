@@ -88,7 +88,7 @@ function nextProjectId(state: DemoState): string {
 export function createProjectJob(
   state: DemoState,
   args: { client: string; scope: string; location: string; stage?: string }
-): { state: DemoState; systemMessages: string[] } {
+): { state: DemoState; systemMessages: string[]; jobId: string } {
   const client = args.client?.trim() || 'Unknown client'
   const scope = args.scope?.trim() || 'Install / service'
   const location = args.location?.trim() || 'TBD'
@@ -108,7 +108,8 @@ export function createProjectJob(
   const next: DemoState = { ...state, jobs: { ...state.jobs, install } }
   return {
     state: next,
-    systemMessages: [`Created project ${id}: ${client} — ${scope} (${location}). Stage: ${stage}.`]
+    systemMessages: [`Created project ${id}: ${client} — ${scope} (${location}). Stage: ${stage}.`],
+    jobId: id
   }
 }
 
@@ -171,6 +172,7 @@ export function updateEmergencyJob(
     status?: string
     crewId?: string
     eta?: string
+    notes?: string[]
   }
 ): { state: DemoState; systemMessages: string[] } {
   const list = state.jobs.emergency
@@ -188,7 +190,8 @@ export function updateEmergencyJob(
     priority: args.priority !== undefined ? (args.priority === 'Med' ? 'Med' : 'High') : job.priority,
     status,
     crewId: args.crewId !== undefined ? args.crewId : job.crewId,
-    eta: args.eta !== undefined ? args.eta : job.eta
+    eta: args.eta !== undefined ? args.eta : job.eta,
+    notes: args.notes !== undefined ? args.notes : job.notes
   }
   const emergency = list.map((j, i) => (i === idx ? updated : j))
   const next: DemoState = { ...state, jobs: { ...state.jobs, emergency } }
@@ -290,7 +293,7 @@ export function createDeal(
     servicePlanTier: ServicePlanTier
     renewalDueInDays?: number
   }
-): { state: DemoState; systemMessages: string[] } {
+): { state: DemoState; systemMessages: string[]; dealId: string } {
   const allMessages: string[] = []
   let next = state
   const { state: afterClient, systemMessages: clientMsgs } = upsertClient(next, {
@@ -327,7 +330,7 @@ export function createDeal(
       `Service plan: ${deal.servicePlanTier}.${deal.renewalDueInDays != null ? ` Renewal due in ${deal.renewalDueInDays} days.` : ''}`
     )
   }
-  return { state: next, systemMessages: allMessages }
+  return { state: next, systemMessages: allMessages, dealId }
 }
 
 export function dispatchEmergencyJob(

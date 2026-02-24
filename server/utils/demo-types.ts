@@ -34,6 +34,7 @@ export type EmergencyJob = {
   priority: string
   status: string
   crewId?: string
+  notes?: string[]
 }
 
 export type ProjectJob = {
