@@ -5,9 +5,11 @@ import {
   createDeal,
   createEmergencyJob,
   createProjectJob,
+  deleteProjectJob,
   dispatchEmergencyJob,
   recomputeQuoteConversion,
-  updateDealStage
+  updateDealStage,
+  updateProjectJob
 } from '../utils/mutations'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
@@ -55,7 +57,7 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'create_job',
-      description: 'Create a new commercial / install (project) job in the pipeline. Use when the user asks to create, add, or log a new install job, project, or commercial job (e.g. "new job for Westlake Medical, rooftop replacement, Westlake", "add project Lakewood School chiller upgrade").',
+      description: 'Create a NEW commercial/install (project) job. Use ONLY when the user explicitly wants to create a new project (e.g. "create a new project for X", "add a new job"). Do NOT use for editing an existing project—use update_project_job instead when the user gives an existing project id (e.g. PRJ-4104).',
       parameters: {
         type: 'object',
         properties: {
@@ -65,6 +67,40 @@ const TOOLS = [
           stage: { type: 'string', enum: ['Planned', 'Scheduled', 'In Progress', 'Awaiting Permit', 'On Hold', 'Complete'], description: 'Project stage' }
         },
         required: ['client', 'scope', 'location']
+      }
+    }
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'update_project_job',
+      description: 'Edit an EXISTING project job by id. Use when the user asks to edit, update, or change an existing project and provides a project id (e.g. PRJ-4104, PRJ-4105). Examples: "edit PRJ-4104", "set location for PRJ-4104 to Shaw High School", "update project PRJ-4104 scope to Chiller upgrade". Do NOT use create_job for these—use this tool.',
+      parameters: {
+        type: 'object',
+        properties: {
+          jobId: { type: 'string', description: 'Project id e.g. PRJ-4104' },
+          client: { type: 'string', description: 'Client name' },
+          scope: { type: 'string', description: 'Scope of work' },
+          location: { type: 'string', description: 'Location e.g. Shaw High School, TBD' },
+          stage: { type: 'string', enum: ['Planned', 'Scheduled', 'In Progress', 'Awaiting Permit', 'Permit Follow-up Sent', 'On Hold', 'Complete', 'Cancelled'] },
+          currentWork: { type: 'string' },
+          nextStep: { type: 'string' }
+        },
+        required: ['jobId']
+      }
+    }
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'delete_project_job',
+      description: 'Delete/remove an existing project job by id. Use when the user asks to delete, remove, or get rid of a project (e.g. "delete PRJ-4105", "remove the duplicate project PRJ-4105").',
+      parameters: {
+        type: 'object',
+        properties: {
+          jobId: { type: 'string', description: 'Project id e.g. PRJ-4105' }
+        },
+        required: ['jobId']
       }
     }
   },
@@ -120,11 +156,11 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'find_entities',
-      description: 'Resolve crews, emergency jobs, or CRM deals from the current state. Use type "deals" and query by client/company name to get deal ids (e.g. for update_deal or convert_deal_to_job).',
+      description: 'Resolve crews, emergency jobs, project jobs, or CRM deals. Use type "deals" or "project_jobs" with a client/name query to get ids (e.g. for update_deal, update_project_job, or delete_project_job).',
       parameters: {
         type: 'object',
         properties: {
-          type: { type: 'string', enum: ['crews', 'emergency_jobs', 'deals'] },
+          type: { type: 'string', enum: ['crews', 'emergency_jobs', 'deals', 'project_jobs'] },
           query: { type: 'string', description: 'Partial name or id to match' }
         },
         required: ['type', 'query']
@@ -133,15 +169,21 @@ const TOOLS = [
   }
 ]
 
+const MAX_CHAT_MESSAGES_FOR_CONTEXT = 50
+
 function buildOpenAIMessages(chatMessages: { role: string; text: string }[]) {
+  const recent =
+    chatMessages.length <= MAX_CHAT_MESSAGES_FOR_CONTEXT
+      ? chatMessages
+      : chatMessages.slice(-MAX_CHAT_MESSAGES_FOR_CONTEXT)
   const out: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
     {
       role: 'system',
       content:
-        'You are an HVAC Ops Dispatch assistant. You can: create CRM deals (create_deal), update a deal stage (update_deal: dealId, dealStage), convert a won deal to a job (convert_deal_to_job: dealId), create new emergency jobs (create_emergency), create new commercial/install jobs (create_job), and dispatch existing emergency jobs (dispatch_emergency). Use find_entities with type "deals" and a client name to get deal ids. When the user asks to set a deal to Won (e.g. "change East Cleveland deal to won"), call update_deal, then in your reply ask: "Do you want to convert this to a job?" If they say yes, call convert_deal_to_job with that deal id. Be concise.'
+        'You are an HVAC Ops Dispatch assistant. Use the full conversation history: the user\'s latest message often refers to the previous message (e.g. "yes", "do that", "edit that project", "delete the duplicate")—always interpret it in that context. You can: create CRM deals (create_deal), update a deal stage (update_deal), convert a won deal to a job (convert_deal_to_job), create new emergency jobs (create_emergency), create new commercial/install jobs (create_job), edit existing projects (update_project_job), delete projects (delete_project_job), and dispatch emergency jobs (dispatch_emergency). IMPORTANT: When the user asks to EDIT or UPDATE an existing project and gives a project id (e.g. PRJ-4104), use update_project_job with that jobId—do NOT use create_job. Use create_job only for creating a brand NEW project. When the user asks to delete or remove a project (e.g. "delete PRJ-4105"), use delete_project_job. Use find_entities with type "deals" or "project_jobs" to resolve ids by client name. When the user sets a deal to Won, call update_deal then ask if they want to convert to a job; if yes, call convert_deal_to_job. Be concise.'
     }
   ]
-  for (const m of chatMessages) {
+  for (const m of recent) {
     if (m.role === 'human') out.push({ role: 'user', content: m.text })
     else if (m.role === 'ai') out.push({ role: 'assistant', content: m.text })
     // skip system in API messages
@@ -286,6 +328,16 @@ export default defineEventHandler(async (event) => {
                 clientId: d.clientId
               }))
             )
+          } else if (type === 'project_jobs') {
+            const jobs = state.jobs.install.filter(
+              (j) =>
+                j.id.toLowerCase().includes(q) ||
+                j.client?.toLowerCase().includes(q) ||
+                j.scope?.toLowerCase().includes(q)
+            )
+            result = JSON.stringify(
+              jobs.map((j) => ({ id: j.id, client: j.client, scope: j.scope, location: j.location, stage: j.stage }))
+            )
           } else {
             result = JSON.stringify({ error: 'Unknown type' })
           }
@@ -372,6 +424,34 @@ export default defineEventHandler(async (event) => {
               location: String(location),
               stage: stage ? String(stage) : undefined
             })
+            state = next
+            systemMessages.push(...msgs)
+            result = JSON.stringify({ ok: true, messages: msgs })
+          }
+        } else if (name === 'update_project_job') {
+          const { jobId, client, scope, location, stage, currentWork, nextStep } = args
+          if (!jobId) {
+            result = JSON.stringify({ error: 'jobId required' })
+          } else {
+            const { state: next, systemMessages: msgs } = updateProjectJob(state, {
+              jobId: String(jobId),
+              client: client != null ? String(client) : undefined,
+              scope: scope != null ? String(scope) : undefined,
+              location: location != null ? String(location) : undefined,
+              stage: stage != null ? String(stage) : undefined,
+              currentWork: currentWork != null ? String(currentWork) : undefined,
+              nextStep: nextStep != null ? String(nextStep) : undefined
+            })
+            state = next
+            systemMessages.push(...msgs)
+            result = JSON.stringify({ ok: true, messages: msgs })
+          }
+        } else if (name === 'delete_project_job') {
+          const { jobId } = args
+          if (!jobId) {
+            result = JSON.stringify({ error: 'jobId required' })
+          } else {
+            const { state: next, systemMessages: msgs } = deleteProjectJob(state, { jobId: String(jobId) })
             state = next
             systemMessages.push(...msgs)
             result = JSON.stringify({ ok: true, messages: msgs })

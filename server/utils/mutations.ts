@@ -234,6 +234,18 @@ export function updateProjectJob(
   return { state: next, systemMessages: [`Updated project ${args.jobId}.`] }
 }
 
+export function deleteProjectJob(
+  state: DemoState,
+  args: { jobId: string }
+): { state: DemoState; systemMessages: string[] } {
+  const list = state.jobs.install
+  const idx = list.findIndex((j) => j.id === args.jobId)
+  if (idx < 0) return { state, systemMessages: [`Project job ${args.jobId} not found.`] }
+  const install = list.filter((_, i) => i !== idx)
+  const next: DemoState = { ...state, jobs: { ...state.jobs, install } }
+  return { state: next, systemMessages: [`Deleted project ${args.jobId}.`] }
+}
+
 export function convertDealToJob(
   state: DemoState,
   args: { dealId: string }
