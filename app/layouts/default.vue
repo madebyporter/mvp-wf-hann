@@ -12,10 +12,10 @@
           class="flex"
           :class="[
             msg.role === 'human'
-              ? 'justify-start'
+              ? 'justify-end'
               : msg.role === 'system'
                 ? 'justify-center w-full'
-                : 'justify-end',
+                : 'justify-start',
           ]"
         >
           <div
@@ -44,7 +44,7 @@
             <div class="chat-message-body whitespace-pre-wrap break-words" v-html="formatChatMessage(msg.text)"></div>
           </div>
         </div>
-        <div v-if="isAiTyping" class="flex justify-end">
+        <div v-if="isAiTyping" class="flex justify-start">
           <div class="w-[80%] rounded-xl px-4 py-3 text-sm border bg-slate-100 border-slate-200 text-slate-700">
             <p class="text-[11px] uppercase tracking-wide mb-1 text-blue-700">AI Ops</p>
             <div class="flex items-center gap-1">
